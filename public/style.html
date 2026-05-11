@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스타일 전달카드 | 헤어이어</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── 공통 레이아웃 ─────────────────────────── */
+    body { background: var(--cream); min-height: 100vh; }
+
+    .wizard-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 120px;
+      min-height: 100vh;
+    }
+
+    /* ── 진행 바 ──────────────────────────────── */
+    .progress-bar {
+      position: sticky;
+      top: 60px;
+      z-index: 100;
+      background: var(--cream);
+      padding: 12px 20px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--rose);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--sub);
+    }
+    .progress-labels span.active { color: var(--rose); font-weight: 700; }
+
+    /* ── 단계 섹션 ────────────────────────────── */
+    .step { display: none; padding: 20px; }
+    .step.active { display: block; }
+    .step-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .step-sub {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 20px;
+    }
+
+    /* ── 사진 업로드 ──────────────────────────── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .photo-slot {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      border: 2px dashed var(--border);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .photo-slot:hover { border-color: var(--rose); }
+    .photo-slot .add-icon { font-size: 24px; color: var(--sub); }
+    .photo-slot .add-label { font-size: 11px; color: var(--sub); margin-top: 4px; }
+    .photo-slot img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .photo-slot .remove-btn {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 20px; height: 20px;
+      background: rgba(0,0,0,0.55);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #fff;
+      border: none;
+      z-index: 2;
+    }
+    .photo-slot .want-toggle {
+      position: absolute;
+      bottom: 4px; left: 4px;
+      font-size: 10px;
+      border-radius: 20px;
+      padding: 2px 7px;
+      cursor: pointer;
+      border: none;
+      font-weight: 700;
+      transition: background 0.2s, color 0.2s;
+    }
+    .photo-slot .want-toggle.want {
+      background: var(--rose);
+      color: #fff;
+    }
+    .photo-slot .want-toggle.unwant {
+      background: #555;
+      color: #fff;
+    }
+    #photoInput { display: none; }
+
+    /* ── 칩 태그 ──────────────────────────────── */
+    .chip-group { margin-bottom: 18px; }
+    .chip-group-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      color: var(--dark);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .chip.selected {
+      background: var(--rose);
+      border-color: var(--rose);
+      color: #fff;
+    }
+    .chip.avoid-chip.selected {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: #fff;
+    }
+
+    /* ── 스타일 키워드 카드 ───────────────────── */
+    .keyword-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .keyword-card {
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: #fff;
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .keyword-card:hover { border-color: var(--rose-light); }
+    .keyword-card.selected {
+      border-color: var(--rose);
+      background: var(--rose-light);
+    }
+    .keyword-card .kw-emoji { font-size: 28px; }
+    .keyword-card .kw-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-top: 6px;
+    }
+    .keyword-card .kw-desc {
+      font-size: 11px;
+      color: var(--sub);
+      margin-top: 3px;
+    }
+
+    /* ── 길이 세그먼트 컨트롤 ────────────────── */
+    .length-bar-wrap {
+      margin: 24px 0 32px;
+      padding: 0 8px;
+    }
+    .length-bar {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+    }
+    .length-bar-fill {
+      position: absolute;
+      left: 0; top: 0; height: 100%;
+      background: var(--rose);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .length-ticks {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+    .length-tick {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      gap: 6px;
+    }
+    .length-tick .tick-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: #fff;
+      transition: all 0.2s;
+    }
+    .length-tick.selected .tick-dot {
+      border-color: var(--rose);
+      background: var(--rose);
+    }
+    .length-tick .tick-label {
+      font-size: 11px;
+      color: var(--sub);
+      text-align: center;
+      line-height: 1.3;
+    }
+    .length-tick.selected .tick-label { color: var(--rose); font-weight: 700; }
+
+    /* ── 소심한 고객 모드 ─────────────────────── */
+    .shy-section { margin-bottom: 20px; }
+    .shy-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .shy-desc { font-size: 12px; color: var(--sub); margin-bottom: 12px; }
+    .shy-group { margin-bottom: 16px; }
+    .shy-group-label {
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .shy-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .shy-opt {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      color: var(--dark);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .shy-opt.selected {
+      border-color: var(--rose);
+      background: var(--rose-light);
+      color: var(--rose);
+      font-weight: 700;
+    }
+
+    /* ── 전달카드 ─────────────────────────────── */
+    .letter-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .letter-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .letter-card-header .logo-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--rose);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #fff; font-weight: 700;
+    }
+    .letter-card-header .card-brand {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    .letter-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--dark);
+      white-space: pre-wrap;
+    }
+    .letter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .letter-tag {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: var(--rose-light);
+      color: var(--rose);
+    }
+
+    .memo-area {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      padding: 12px;
+      font-size: 14px;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--dark);
+      background: #fff;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+      margin-bottom: 16px;
+    }
+    .memo-area:focus { border-color: var(--rose); }
+
+    /* ── 하단 고정 버튼 ───────────────────────── */
+    .nav-btns {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+      padding: 12px 20px 24px;
+      background: var(--cream);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+    }
+    .btn-back {
+      flex: 0 0 64px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--dark);
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-back:hover { background: var(--border); }
+    .btn-next {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: var(--rose);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-next:hover { background: var(--rose-dark); }
+    .btn-next:disabled { background: var(--border); color: var(--sub); cursor: not-allowed; }
+
+    /* ── 전체화면 오버레이 ────────────────────── */
+    .fullcard-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .fullcard-overlay.open { display: flex; }
+    .fullcard-inner {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px 24px 24px;
+      position: relative;
+    }
+    .fullcard-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .fullcard-subtitle {
+      font-size: 13px;
+      color: var(--sub);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .fullcard-letter {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--dark);
+      white-space: pre-wrap;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .fullcard-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .fullcard-tag {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: var(--rose-light);
+      color: var(--rose);
+    }
+    .fullcard-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .btn-share {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      background: var(--rose);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-share:hover { background: var(--rose-dark); }
+    .btn-booking {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1.5px solid var(--rose);
+      background: #fff;
+      color: var(--rose);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-booking:hover { background: var(--rose-light); }
+    .btn-close-overlay {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--border);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── 토스트 ───────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 2000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── 네비게이션 ────────────────────────────── -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">헤어이어</a>
+  <div class="nav-links">
+    <a href="search.html">미용실 찾기</a>
+    <a href="booking.html">빈자리 보기</a>
+    <a href="style.html" class="active">스타일카드</a>
+    <a href="for-salon.html" class="btn-outline-sm">사장님이신가요?</a>
+  </div>
+</nav>
+
+<div class="wizard-wrap">
+
+  <!-- 진행 바 -->
+  <div class="progress-bar">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:25%"></div>
+    </div>
+    <div class="progress-labels">
+      <span id="lbl1" class="active">① 사진·분위기</span>
+      <span id="lbl2">② 스타일</span>
+      <span id="lbl3">③ 길이·소통</span>
+      <span id="lbl4">④ 전달카드</span>
+    </div>
+  </div>
+
+  <!-- ════ STEP 1 — 사진 & 분위기 ════ -->
+  <div class="step active" id="step1">
+    <p class="step-title">원하는 스타일 사진을 올려주세요</p>
+    <p class="step-sub">최대 5장 · 사진마다 원해요/싫어요를 선택할 수 있어요</p>
+
+    <div class="photo-grid" id="photoGrid">
+      <div class="photo-slot add-slot" onclick="triggerPhotoInput()">
+        <div class="add-icon">+</div>
+        <div class="add-label">사진 추가</div>
+      </div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" multiple />
+
+    <div class="chip-group">
+      <div class="chip-group-label">분위기</div>
+      <div class="chip-list" id="moodChips"></div>
+    </div>
+    <div class="chip-group">
+      <div class="chip-group-label">색상</div>
+      <div class="chip-list" id="colorChips"></div>
+    </div>
+    <div class="chip-group">
+      <div class="chip-group-label">이런 건 싫어요</div>
+      <div class="chip-list" id="badMoodChips"></div>
+    </div>
+  </div>
+
+  <!-- ════ STEP 2 — 스타일 키워드 ════ -->
+  <div class="step" id="step2">
+    <p class="step-title">원하는 스타일 느낌을 골라주세요</p>
+    <p class="step-sub">여러 개 선택 가능해요</p>
+
+    <div class="keyword-grid" id="keywordGrid"></div>
+
+    <div class="chip-group">
+      <div class="chip-group-label">꼭 넣어주세요</div>
+      <div class="chip-list" id="wantChips"></div>
+    </div>
+    <div class="chip-group">
+      <div class="chip-group-label">이건 피해주세요</div>
+      <div class="chip-list" id="avoidChips"></div>
+    </div>
+  </div>
+
+  <!-- ════ STEP 3 — 길이 & 소심한 고객 ════ -->
+  <div class="step" id="step3">
+    <p class="step-title">원하는 머리 길이는?</p>
+    <p class="step-sub">눈금을 눌러 선택해주세요</p>
+
+    <div class="length-bar-wrap">
+      <div class="length-bar">
+        <div class="length-bar-fill" id="lengthFill"></div>
+      </div>
+      <div class="length-ticks" id="lengthTicks"></div>
+    </div>
+
+    <div class="shy-section">
+      <div class="shy-title">🤫 소심한 고객 모드</div>
+      <div class="shy-desc">디자이너에게 전달할 소통 방식을 선택해주세요</div>
+
+      <div class="shy-group">
+        <div class="shy-group-label">스타일링 중 말 걸어주세요 여부</div>
+        <div class="shy-options" id="talkOpts">
+          <div class="shy-opt selected" data-group="talk" data-val="좋아요">좋아요 😊</div>
+          <div class="shy-opt" data-group="talk" data-val="조용히 해주세요">조용히 해주세요 🤫</div>
+          <div class="shy-opt" data-group="talk" data-val="상관없어요">상관없어요</div>
+        </div>
+      </div>
+
+      <div class="shy-group">
+        <div class="shy-group-label">중간 확인 요청</div>
+        <div class="shy-options" id="checkOpts">
+          <div class="shy-opt selected" data-group="check" data-val="보여주세요">중간에 보여주세요 🪞</div>
+          <div class="shy-opt" data-group="check" data-val="마지막에 보여주세요">마지막에 보여주세요</div>
+          <div class="shy-opt" data-group="check" data-val="알아서 해주세요">알아서 해주세요</div>
+        </div>
+      </div>
+
+      <div class="shy-group">
+        <div class="shy-group-label">추가 제안</div>
+        <div class="shy-options" id="suggestOpts">
+          <div class="shy-opt selected" data-group="suggest" data-val="환영해요">환영해요 ✨</div>
+          <div class="shy-opt" data-group="suggest" data-val="원하는 대로만">원하는 대로만 해주세요</div>
+          <div class="shy-opt" data-group="suggest" data-val="괜찮으면 얘기해주세요">괜찮으면 얘기해주세요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ STEP 4 — 전달카드 ════ -->
+  <div class="step" id="step4">
+    <p class="step-title">전달카드가 완성됐어요</p>
+    <p class="step-sub">디자이너에게 이렇게 전달돼요</p>
+
+    <div class="letter-card">
+      <div class="letter-card-header">
+        <div class="logo-dot">헤</div>
+        <div class="card-brand">헤어이어 스타일카드</div>
+      </div>
+      <div class="letter-body" id="letterBody"></div>
+      <div class="letter-tags" id="letterTags"></div>
+    </div>
+
+    <textarea class="memo-area" id="memoArea" placeholder="디자이너에게 추가로 전달할 내용이 있으면 적어주세요 (선택)"></textarea>
+
+    <button class="btn-next" style="position:static;width:100%;margin-bottom:10px" onclick="openFullCard()">
+      디자이너에게 보여주기 📋
+    </button>
+    <button class="btn-booking" style="width:100%;padding:14px;border-radius:10px;border:1.5px solid var(--rose);background:#fff;color:var(--rose);font-size:15px;font-weight:700;cursor:pointer;" onclick="location.href='booking.html'">
+      지금 예약하러 가기 →
+    </button>
+  </div>
+
+</div><!-- /wizard-wrap -->
+
+<!-- ── 하단 고정 버튼 ─────────────────────────── -->
+<div class="nav-btns" id="navBtns">
+  <button class="btn-back" id="btnBack" onclick="prevStep()">←</button>
+  <button class="btn-next" id="btnNext" onclick="nextStep()">다음</button>
+</div>
+
+<!-- ── 전체화면 오버레이 ───────────────────────── -->
+<div class="fullcard-overlay" id="fullcardOverlay">
+  <div class="fullcard-inner">
+    <button class="btn-close-overlay" onclick="closeFullCard()">✕</button>
+    <div class="fullcard-title">✂ 스타일 전달카드</div>
+    <div class="fullcard-subtitle">디자이너에게 이 화면을 보여주세요</div>
+    <div class="fullcard-letter" id="fullcardLetter"></div>
+    <div class="fullcard-tags" id="fullcardTags"></div>
+    <div class="fullcard-actions">
+      <button class="btn-share" onclick="shareCard()">공유하기</button>
+      <button class="btn-booking" onclick="location.href='booking.html'">예약하러 가기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 토스트 ───────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 상태 ──────────────────────────────────────────
+const state = {
+  photos: [],        // [{url, want: true/false}]
+  mood: [],
+  color: [],
+  badMood: [],
+  styles: [],
+  want: [],
+  avoid: [],
+  length: 2,         // 0~5 인덱스
+  talk: '좋아요',
+  check: '보여주세요',
+  suggest: '환영해요',
+  memo: '',
+};
+
+let currentStep = 1;
+const TOTAL_STEPS = 4;
+
+// ── 데이터 정의 ────────────────────────────────────
+const MOODS = ['청순한','시크한','귀여운','우아한','보헤미안','세련된','내추럴한','빈티지'];
+const COLORS = ['블랙','다크브라운','브라운','애쉬','골든','레드','핑크','블루','유지(현재)'];
+const BAD_MOODS = ['너무 짧게','너무 많이 자르는 것','뻣뻣해 보이는 것','유행 너무 타는 스타일','지나친 볼륨','무거운 느낌'];
+const WANTS = ['가볍게','레이어드','뱅(앞머리)','S컬','C컬','리프펌','스트레이트'];
+const AVOIDS = ['앞머리 자르기','강한 펌','탈색','너무 짧게','층 많이'];
+
+const KEYWORDS = [
+  { emoji: '🌿', label: '자연스럽게', desc: '부드럽고 자연스러운 흐름' },
+  { emoji: '🔥', label: '확 바꾸고 싶어요', desc: '확실한 변화 원해요' },
+  { emoji: '🌸', label: '여성스럽게', desc: '부드럽고 여성스러운 느낌' },
+  { emoji: '🖤', label: '시크하게', desc: '쿨하고 세련된 느낌' },
+  { emoji: '✂️', label: '가볍게', desc: '숱 정리·가벼운 레이어드' },
+  { emoji: '💫', label: '볼륨감있게', desc: '풍성하고 탄력 있는 스타일' },
+];
+
+const LENGTH_LABELS = [
+  { label: '귀\n위', pct: 0 },
+  { label: '귀\n선', pct: 20 },
+  { label: '턱\n선', pct: 40 },
+  { label: '쇄\n골', pct: 60 },
+  { label: '가\n슴', pct: 80 },
+  { label: '허\n리', pct: 100 },
+];
+
+// ── 초기화 ────────────────────────────────────────
+function initChips(containerId, items, stateKey, avoidStyle) {
+  const el = document.getElementById(containerId);
+  items.forEach(item => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (avoidStyle ? ' avoid-chip' : '');
+    chip.textContent = item;
+    chip.addEventListener('click', () => {
+      const arr = state[stateKey];
+      const idx = arr.indexOf(item);
+      if (idx === -1) arr.push(item);
+      else arr.splice(idx, 1);
+      chip.classList.toggle('selected', arr.includes(item));
+    });
+    el.appendChild(chip);
+  });
+}
+
+function initKeywords() {
+  const grid = document.getElementById('keywordGrid');
+  KEYWORDS.forEach(kw => {
+    const card = document.createElement('div');
+    card.className = 'keyword-card';
+    card.innerHTML = `<div class="kw-emoji">${kw.emoji}</div>
+      <div class="kw-label">${kw.label}</div>
+      <div class="kw-desc">${kw.desc}</div>`;
+    card.addEventListener('click', () => {
+      const arr = state.styles;
+      const idx = arr.indexOf(kw.label);
+      if (idx === -1) arr.push(kw.label);
+      else arr.splice(idx, 1);
+      card.classList.toggle('selected', arr.includes(kw.label));
+    });
+    grid.appendChild(card);
+  });
+}
+
+function initLengthBar() {
+  const ticks = document.getElementById('lengthTicks');
+  LENGTH_LABELS.forEach((l, i) => {
+    const tick = document.createElement('div');
+    tick.className = 'length-tick' + (i === state.length ? ' selected' : '');
+    tick.innerHTML = `<div class="tick-dot"></div><div class="tick-label">${l.label}</div>`;
+    tick.addEventListener('click', () => setLength(i));
+    ticks.appendChild(tick);
+  });
+  updateLengthFill();
+}
+
+function setLength(i) {
+  state.length = i;
+  document.querySelectorAll('.length-tick').forEach((t, idx) => {
+    t.classList.toggle('selected', idx === i);
+  });
+  updateLengthFill();
+}
+
+function updateLengthFill() {
+  document.getElementById('lengthFill').style.width = LENGTH_LABELS[state.length].pct + '%';
+}
+
+function initShyOptions() {
+  document.querySelectorAll('.shy-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const group = opt.dataset.group;
+      const val = opt.dataset.val;
+      state[group] = val;
+      document.querySelectorAll(`.shy-opt[data-group="${group}"]`).forEach(o => {
+        o.classList.toggle('selected', o.dataset.val === val);
+      });
+    });
+  });
+}
+
+// ── 사진 업로드 ───────────────────────────────────
+function triggerPhotoInput() {
+  if (state.photos.length >= 5) return showToast('사진은 최대 5장까지 추가할 수 있어요');
+  document.getElementById('photoInput').click();
+}
+
+document.getElementById('photoInput').addEventListener('change', function (e) {
+  const files = Array.from(e.target.files);
+  const remaining = 5 - state.photos.length;
+  files.slice(0, remaining).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      state.photos.push({ url: ev.target.result, want: true });
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  this.value = '';
+});
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = '';
+  state.photos.forEach((p, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'photo-slot';
+    slot.innerHTML = `<img src="${p.url}" alt="사진 ${i+1}" />
+      <button class="remove-btn" onclick="removePhoto(${i})">✕</button>
+      <button class="want-toggle ${p.want ? 'want' : 'unwant'}" onclick="toggleWant(${i})">${p.want ? '원해요' : '싫어요'}</button>`;
+    grid.appendChild(slot);
+  });
+  if (state.photos.length < 5) {
+    const addSlot = document.createElement('div');
+    addSlot.className = 'photo-slot add-slot';
+    addSlot.innerHTML = `<div class="add-icon">+</div><div class="add-label">사진 추가</div>`;
+    addSlot.onclick = triggerPhotoInput;
+    grid.appendChild(addSlot);
+  }
+}
+
+function removePhoto(i) {
+  state.photos.splice(i, 1);
+  renderPhotoGrid();
+}
+
+function toggleWant(i) {
+  state.photos[i].want = !state.photos[i].want;
+  renderPhotoGrid();
+}
+
+// ── 편지 생성 ─────────────────────────────────────
+function buildLetter() {
+  const lengthName = LENGTH_LABELS[state.length].label.replace('\n', '');
+  const lines = [];
+
+  lines.push('안녕하세요, 디자이너님 😊');
+  lines.push('');
+
+  if (state.styles.length > 0) {
+    lines.push(`오늘 원하는 스타일은 ${state.styles.join(', ')} 느낌이에요.`);
+  }
+
+  lines.push(`길이는 ${lengthName} 정도로 부탁드려요.`);
+
+  if (state.mood.length > 0) {
+    lines.push(`분위기는 ${state.mood.join(', ')} 스타일을 좋아해요.`);
+  }
+
+  if (state.color.length > 0) {
+    lines.push(`색상은 ${state.color.join(', ')} 계열을 원해요.`);
+  }
+
+  if (state.want.length > 0) {
+    lines.push(`꼭 넣어주셨으면 하는 건 ${state.want.join(', ')}이에요.`);
+  }
+
+  if (state.avoid.length > 0 || state.badMood.length > 0) {
+    const avoidAll = [...state.avoid, ...state.badMood];
+    lines.push(`이런 건 피해주시면 좋겠어요: ${avoidAll.join(', ')}`);
+  }
+
+  lines.push('');
+  lines.push('소통 방식으로는');
+  lines.push(`말 걸어주세요 여부: ${state.talk}`);
+  lines.push(`중간 확인: ${state.check}`);
+  lines.push(`추가 제안: ${state.suggest}`);
+
+  const memo = document.getElementById('memoArea')?.value.trim() || state.memo;
+  if (memo) {
+    lines.push('');
+    lines.push('추가 메모:');
+    lines.push(memo);
+  }
+
+  lines.push('');
+  lines.push('잘 부탁드립니다! 🙏');
+
+  return lines.join('\n');
+}
+
+function buildTags() {
+  const tags = [];
+  const lengthName = LENGTH_LABELS[state.length].label.replace('\n', '');
+  tags.push(lengthName);
+  state.styles.forEach(s => tags.push(s));
+  state.mood.slice(0, 3).forEach(m => tags.push(m));
+  state.color.slice(0, 2).forEach(c => tags.push(c));
+  return tags;
+}
+
+function renderStep4() {
+  const letter = buildLetter();
+  document.getElementById('letterBody').textContent = letter;
+  const tagsEl = document.getElementById('letterTags');
+  tagsEl.innerHTML = '';
+  buildTags().forEach(t => {
+    const tag = document.createElement('span');
+    tag.className = 'letter-tag';
+    tag.textContent = '#' + t;
+    tagsEl.appendChild(tag);
+  });
+}
+
+// ── 오버레이 ──────────────────────────────────────
+function openFullCard() {
+  state.memo = document.getElementById('memoArea').value.trim();
+  const letter = buildLetter();
+  document.getElementById('fullcardLetter').textContent = letter;
+  const tagsEl = document.getElementById('fullcardTags');
+  tagsEl.innerHTML = '';
+  buildTags().forEach(t => {
+    const tag = document.createElement('span');
+    tag.className = 'fullcard-tag';
+    tag.textContent = '#' + t;
+    tagsEl.appendChild(tag);
+  });
+  document.getElementById('fullcardOverlay').classList.add('open');
+}
+
+function closeFullCard() {
+  document.getElementById('fullcardOverlay').classList.remove('open');
+}
+
+function shareCard() {
+  state.memo = document.getElementById('memoArea')?.value.trim() || state.memo;
+  const text = buildLetter();
+  if (navigator.share) {
+    navigator.share({ title: '헤어이어 스타일카드', text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('카드 내용이 복사됐어요! 📋'));
+  }
+}
+
+// ── 네비게이션 ────────────────────────────────────
+function goToStep(n) {
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + currentStep).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (currentStep === 4) {
+    renderStep4();
+    document.getElementById('navBtns').style.display = 'none';
+  } else {
+    document.getElementById('navBtns').style.display = 'flex';
+  }
+}
+
+function nextStep() {
+  if (currentStep < TOTAL_STEPS) goToStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 1) goToStep(currentStep - 1);
+  else history.back();
+}
+
+function updateProgress() {
+  const pct = (currentStep / TOTAL_STEPS) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  ['lbl1','lbl2','lbl3','lbl4'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', i + 1 === currentStep);
+  });
+  document.getElementById('btnBack').style.display = currentStep === 1 ? 'none' : '';
+  const btnNext = document.getElementById('btnNext');
+  btnNext.textContent = currentStep === TOTAL_STEPS - 1 ? '완성하기 ✨' : '다음';
+}
+
+// ── 토스트 ────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── 부트 ─────────────────────────────────────────
+(function init() {
+  initChips('moodChips', MOODS, 'mood');
+  initChips('colorChips', COLORS, 'color');
+  initChips('badMoodChips', BAD_MOODS, 'badMood', true);
+  initKeywords();
+  initChips('wantChips', WANTS, 'want');
+  initChips('avoidChips', AVOIDS, 'avoid', true);
+  initLengthBar();
+  initShyOptions();
+  updateProgress();
+  document.getElementById('btnBack').style.display = 'none';
+})();
+</script>
+</body>
+</html>

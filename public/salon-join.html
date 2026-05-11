@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>사장님 등록 신청 — 헤어이어</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">헤어<span>이어</span></a>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="search.html">미용실 찾기</a></li>
+        <li><a href="booking.html">빈자리 보기</a></li>
+        <li><a href="style.html">스타일카드</a></li>
+        <li><a href="for-salon.html" class="nav-salon">사장님이신가요?</a></li>
+      </ul>
+      <button class="nav-hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<div class="join-wrap">
+  <div style="text-align:center;margin-bottom:32px;">
+    <div class="section-label" style="display:block;text-align:center;">Salon Registration</div>
+    <h1 class="serif" style="font-size:clamp(22px,3.5vw,30px);margin-bottom:8px;">미용실 등록 신청</h1>
+    <p style="font-size:14px;color:var(--sub);">처음 30일은 무료. 카드 등록 없이 시작하세요.</p>
+  </div>
+
+  <!-- ─── Progress ─── -->
+  <div class="join-progress">
+    <div class="progress-step active" data-step="1">
+      <div class="progress-dot">1</div>
+      <span class="progress-label">기본 정보</span>
+    </div>
+    <div class="progress-line" id="pline1"></div>
+    <div class="progress-step" data-step="2">
+      <div class="progress-dot">2</div>
+      <span class="progress-label">영업 정보</span>
+    </div>
+    <div class="progress-line" id="pline2"></div>
+    <div class="progress-step" data-step="3">
+      <div class="progress-dot">3</div>
+      <span class="progress-label">요금제 선택</span>
+    </div>
+  </div>
+
+  <!-- ─── Step 1: 기본 정보 ─── -->
+  <div class="form-step-panel active" id="fstep1">
+    <div class="form-card">
+      <h2 class="form-card-title">기본 정보</h2>
+      <p class="form-card-desc">미용실과 대표자의 기본 정보를 입력해주세요.</p>
+
+      <div class="form-group">
+        <label for="salonName">미용실 상호명 *</label>
+        <input class="form-input" type="text" id="salonName" placeholder="예: 헤어살롱 블랑" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="ownerName">대표자 이름 *</label>
+          <input class="form-input" type="text" id="ownerName" placeholder="홍길동" required />
+        </div>
+        <div class="form-group">
+          <label for="ownerPhone">연락처 *</label>
+          <input class="form-input" type="tel" id="ownerPhone" placeholder="010-0000-0000" maxlength="13" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="ownerEmail">이메일 *</label>
+        <input class="form-input" type="email" id="ownerEmail" placeholder="example@email.com" required />
+      </div>
+      <div class="form-group">
+        <label for="bizNumber">사업자 등록번호</label>
+        <input class="form-input" type="text" id="bizNumber" placeholder="000-00-00000" maxlength="12" />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="nextStep(1)">다음 단계 →</button>
+    </div>
+  </div>
+
+  <!-- ─── Step 2: 영업 정보 ─── -->
+  <div class="form-step-panel" id="fstep2">
+    <div class="form-card">
+      <h2 class="form-card-title">영업 정보</h2>
+      <p class="form-card-desc">미용실 위치와 운영 정보를 알려주세요.</p>
+
+      <div class="form-group">
+        <label for="salonAddr">주소 *</label>
+        <input class="form-input" type="text" id="salonAddr" placeholder="서울 마포구 연남동 000-0" required />
+      </div>
+      <div class="form-group">
+        <label for="salonAddrDetail">상세 주소</label>
+        <input class="form-input" type="text" id="salonAddrDetail" placeholder="2층 헤어살롱" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="openTime">영업 시작 시간 *</label>
+          <select class="form-select" id="openTime">
+            <option value="">선택</option>
+            <option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option>
+            <option>11:00</option><option>11:30</option><option>12:00</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="closeTime">영업 종료 시간 *</label>
+          <select class="form-select" id="closeTime">
+            <option value="">선택</option>
+            <option>18:00</option><option>19:00</option><option>20:00</option>
+            <option>21:00</option><option>22:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>정기 휴무일</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <input type="checkbox" id="dMon" /><label for="dMon" style="font-size:13px;cursor:pointer;">월</label>
+          <input type="checkbox" id="dTue" /><label for="dTue" style="font-size:13px;cursor:pointer;">화</label>
+          <input type="checkbox" id="dWed" /><label for="dWed" style="font-size:13px;cursor:pointer;">수</label>
+          <input type="checkbox" id="dThu" /><label for="dThu" style="font-size:13px;cursor:pointer;">목</label>
+          <input type="checkbox" id="dFri" /><label for="dFri" style="font-size:13px;cursor:pointer;">금</label>
+          <input type="checkbox" id="dSat" /><label for="dSat" style="font-size:13px;cursor:pointer;">토</label>
+          <input type="checkbox" id="dSun" /><label for="dSun" style="font-size:13px;cursor:pointer;">일</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>제공 서비스 *</label>
+        <div class="service-grid" style="margin-top:6px;">
+          <input type="checkbox" class="service-check" id="svc1" /><label class="service-label" for="svc1"><span class="svc-icon">✂️</span><span class="svc-text">컷</span></label>
+          <input type="checkbox" class="service-check" id="svc2" /><label class="service-label" for="svc2"><span class="svc-icon">🎨</span><span class="svc-text">염색</span></label>
+          <input type="checkbox" class="service-check" id="svc3" /><label class="service-label" for="svc3"><span class="svc-icon">🌀</span><span class="svc-text">펌</span></label>
+          <input type="checkbox" class="service-check" id="svc4" /><label class="service-label" for="svc4"><span class="svc-icon">💆</span><span class="svc-text">케어</span></label>
+          <input type="checkbox" class="service-check" id="svc5" /><label class="service-label" for="svc5"><span class="svc-icon">👰</span><span class="svc-text">웨딩</span></label>
+          <input type="checkbox" class="service-check" id="svc6" /><label class="service-label" for="svc6"><span class="svc-icon">🪮</span><span class="svc-text">두피관리</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="seatCount">시술석 수</label>
+        <select class="form-select" id="seatCount">
+          <option value="">선택</option>
+          <option>1석</option><option>2석</option><option>3석</option><option>4~5석</option>
+          <option>6~10석</option><option>11석 이상</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="prevStep(2)">← 이전</button>
+      <button class="btn btn-primary" onclick="nextStep(2)">다음 단계 →</button>
+    </div>
+  </div>
+
+  <!-- ─── Step 3: 요금제 선택 ─── -->
+  <div class="form-step-panel" id="fstep3">
+    <div class="form-card">
+      <h2 class="form-card-title">요금제 선택</h2>
+      <p class="form-card-desc">처음 30일은 어떤 요금제든 무료입니다.</p>
+
+      <div class="plan-selector">
+        <input type="radio" class="plan-radio" name="plan" id="planBasic" value="basic" />
+        <label class="plan-label" for="planBasic">
+          <span class="plan-label-icon">🌱</span>
+          <div class="plan-label-info">
+            <div class="plan-label-name">베이직</div>
+            <div class="plan-label-desc">월 예약 100건, 기본 통계</div>
+          </div>
+          <span class="plan-label-price">29,000원/월</span>
+        </label>
+
+        <input type="radio" class="plan-radio" name="plan" id="planPro" value="pro" checked />
+        <label class="plan-label" for="planPro" style="position:relative;">
+          <span class="plan-label-icon">⚡</span>
+          <div class="plan-label-info">
+            <div class="plan-label-name">프로 <span style="background:var(--rose);color:#fff;font-size:10px;padding:2px 7px;border-radius:8px;margin-left:6px;vertical-align:middle;">추천</span></div>
+            <div class="plan-label-desc">무제한 예약, 알림톡, 고급 통계</div>
+          </div>
+          <span class="plan-label-price">59,000원/월</span>
+        </label>
+
+        <input type="radio" class="plan-radio" name="plan" id="planChain" value="chain" />
+        <label class="plan-label" for="planChain">
+          <span class="plan-label-icon">🏢</span>
+          <div class="plan-label-info">
+            <div class="plan-label-name">체인 · 프랜차이즈</div>
+            <div class="plan-label-desc">멀티지점, API 연동, 전담 매니저</div>
+          </div>
+          <span class="plan-label-price">문의</span>
+        </label>
+      </div>
+
+      <div style="background:var(--cream);border-radius:var(--radius-sm);padding:14px 16px;margin-top:20px;font-size:13px;color:var(--sub);line-height:1.65;">
+        ✅ 처음 30일은 무료<br>
+        ✅ 카드 등록 없이 시작 가능<br>
+        ✅ 언제든지 해지 가능 (최소 계약 없음)
+      </div>
+
+      <div class="form-group" style="margin-top:20px;">
+        <label for="joinMemo">추가 문의사항 (선택)</label>
+        <textarea class="wizard-textarea" id="joinMemo" rows="3" placeholder="궁금한 점이나 특별한 요청이 있으시면 적어주세요."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="prevStep(3)">← 이전</button>
+      <button class="btn btn-primary" onclick="submitForm()">신청 완료하기</button>
+    </div>
+  </div>
+
+  <!-- ─── Complete ─── -->
+  <div class="form-step-panel" id="fcomplete" style="text-align:center;">
+    <div style="background:var(--white);border-radius:var(--radius-lg);padding:48px 32px;border:1.5px solid var(--border);">
+      <div style="font-size:56px;margin-bottom:20px;">🎉</div>
+      <h2 class="serif" style="font-size:24px;margin-bottom:12px;">등록 신청이 완료됐습니다!</h2>
+      <p style="font-size:14px;color:var(--sub);line-height:1.75;margin-bottom:32px;">
+        담당자가 1영업일 내 검토 후 승인 연락을 드립니다.<br>
+        등록하신 이메일로 확인 메일이 발송됩니다.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:260px;margin:0 auto;">
+        <a href="for-salon.html" class="btn btn-primary">사장님 페이지 보기</a>
+        <a href="index.html" class="btn btn-secondary">메인으로 가기</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">헤어이어</div>
+  <div class="footer-links">
+    <a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">고객센터</a>
+  </div>
+  <p>© 2026 헤어이어. All rights reserved.</p>
+</footer>
+
+<script>
+let currentStep = 1;
+
+function updateProgress(step) {
+  document.querySelectorAll('.progress-step').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.classList.toggle('active', sn === step);
+    s.classList.toggle('done', sn < step);
+  });
+  document.getElementById('pline1').classList.toggle('done', step > 1);
+  document.getElementById('pline2').classList.toggle('done', step > 2);
+}
+
+function nextStep(from) {
+  if (from === 1) {
+    if (!document.getElementById('salonName').value.trim()) { alert('미용실 상호명을 입력해주세요.'); return; }
+    if (!document.getElementById('ownerName').value.trim()) { alert('대표자 이름을 입력해주세요.'); return; }
+    if (!document.getElementById('ownerPhone').value.trim()) { alert('연락처를 입력해주세요.'); return; }
+    if (!document.getElementById('ownerEmail').value.trim()) { alert('이메일을 입력해주세요.'); return; }
+  }
+  if (from === 2) {
+    if (!document.getElementById('salonAddr').value.trim()) { alert('주소를 입력해주세요.'); return; }
+    const checked = document.querySelectorAll('.service-check:checked');
+    if (checked.length === 0) { alert('제공 서비스를 하나 이상 선택해주세요.'); return; }
+  }
+  document.getElementById('fstep' + from).classList.remove('active');
+  document.getElementById('fstep' + (from + 1)).classList.add('active');
+  currentStep = from + 1;
+  updateProgress(currentStep);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prevStep(from) {
+  document.getElementById('fstep' + from).classList.remove('active');
+  document.getElementById('fstep' + (from - 1)).classList.add('active');
+  currentStep = from - 1;
+  updateProgress(currentStep);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function submitForm() {
+  const plan = document.querySelector('input[name="plan"]:checked');
+  if (!plan) { alert('요금제를 선택해주세요.'); return; }
+  document.getElementById('fstep3').classList.remove('active');
+  document.getElementById('fcomplete').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 전화번호 자동 하이픈
+document.getElementById('ownerPhone').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'');
+  if (v.length > 3 && v.length <= 7) v = v.slice(0,3)+'-'+v.slice(3);
+  else if (v.length > 7) v = v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
+  e.target.value = v;
+});
+document.getElementById('bizNumber').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'');
+  if (v.length > 3 && v.length <= 5) v = v.slice(0,3)+'-'+v.slice(3);
+  else if (v.length > 5) v = v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,10);
+  e.target.value = v;
+});
+
+// URL param으로 요금제 프리셋
+const params = new URLSearchParams(location.search);
+const planParam = params.get('plan');
+if (planParam) {
+  const radio = document.getElementById('plan' + planParam.charAt(0).toUpperCase() + planParam.slice(1));
+  if (radio) radio.checked = true;
+}
+
+const hamburger = document.getElementById('hamburger'), navMenu = document.getElementById('navMenu');
+hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
+</script>
+</body>
+</html>

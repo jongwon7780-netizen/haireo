@@ -1,0 +1,291 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>미용실 찾기 — 헤어이어</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">헤어<span>이어</span></a>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="search.html" class="active">미용실 찾기</a></li>
+        <li><a href="booking.html">빈자리 보기</a></li>
+        <li><a href="style.html">스타일카드</a></li>
+        <li><a href="for-salon.html" class="nav-salon">사장님이신가요?</a></li>
+      </ul>
+      <button class="nav-hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
+
+<!-- ─── Search Header ─── -->
+<div class="container search-header">
+  <div class="search-wrap" style="max-width:100%;margin:0 0 0;">
+    <input type="text" id="searchInput" placeholder="지역명, 미용실 이름으로 검색" />
+    <button class="btn-search" onclick="applySearch()">검색</button>
+  </div>
+</div>
+
+<!-- ─── Filter Bar ─── -->
+<div class="search-filter-bar">
+  <div class="filter-bar-inner">
+    <div class="filter-group">
+      <span class="filter-group-label">거리</span>
+      <div class="filter-chips" id="distFilter">
+        <button class="chip active" data-dist="0.5">500m</button>
+        <button class="chip" data-dist="1">1km</button>
+        <button class="chip" data-dist="2">2km</button>
+        <button class="chip" data-dist="5">5km</button>
+        <button class="chip" data-dist="99">전체</button>
+      </div>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span class="filter-group-label">별점</span>
+      <div class="filter-chips" id="ratingFilter">
+        <button class="chip active" data-rating="0">전체</button>
+        <button class="chip" data-rating="4.5">4.5★ 이상</button>
+        <button class="chip" data-rating="4.0">4.0★ 이상</button>
+      </div>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span class="filter-group-label">서비스</span>
+      <div class="filter-chips" id="svcFilter">
+        <button class="chip active" data-svc="전체">전체</button>
+        <button class="chip" data-svc="컷">컷</button>
+        <button class="chip" data-svc="염색">염색</button>
+        <button class="chip" data-svc="펌">펌</button>
+        <button class="chip" data-svc="케어">케어</button>
+      </div>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="sort-bar" id="sortBar">
+      <button class="sort-tab active" data-sort="dist">거리순</button>
+      <button class="sort-tab" data-sort="rating">별점순</button>
+      <button class="sort-tab" data-sort="review">리뷰순</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Results ─── -->
+<div class="search-body">
+  <p class="search-result-count" id="resultCount"></p>
+  <div class="salon-list" id="salonList"></div>
+</div>
+
+<!-- ─── Booking Modal (shared) ─── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="modalTitle"></h2>
+    <p class="modal-sub" id="modalSub"></p>
+    <div class="modal-info" id="modalInfo"></div>
+    <div class="modal-form">
+      <label for="guestName">이름</label>
+      <input type="text" id="guestName" placeholder="홍길동" maxlength="20" />
+      <label for="guestPhone">연락처</label>
+      <input type="tel" id="guestPhone" placeholder="010-0000-0000" maxlength="13" />
+      <button class="modal-submit" id="modalSubmit">예약 확정하기</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">헤어이어</div>
+  <div class="footer-links">
+    <a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">고객센터</a><a href="for-salon.html">사장님 등록</a>
+  </div>
+  <p>© 2026 헤어이어. All rights reserved.</p>
+</footer>
+
+<script>
+// ─── Mock Data ───
+const SALONS = [
+  { id:1,  name:'헤어살롱 블랑',      dist:0.3, rating:4.9, reviews:142, tags:['컷','염색','케어'],   slots:['17:00','18:00'], emoji:'✂️' },
+  { id:2,  name:'스튜디오 레이어',    dist:0.5, rating:4.8, reviews:98,  tags:['컷','펌'],            slots:['18:00'],         emoji:'💇' },
+  { id:3,  name:'그린헤어',           dist:0.7, rating:4.7, reviews:210, tags:['컷','염색','펌'],     slots:['17:00','19:00'], emoji:'🌿' },
+  { id:4,  name:'헤어아뜰리에',       dist:0.9, rating:4.6, reviews:77,  tags:['컷','케어'],          slots:['20:00'],         emoji:'🎨' },
+  { id:5,  name:'살롱드파리',         dist:1.2, rating:4.5, reviews:185, tags:['컷','염색','펌','케어'],slots:['18:00','19:00'],emoji:'🥐' },
+  { id:6,  name:'커트스튜디오 모노',  dist:1.5, rating:4.4, reviews:63,  tags:['컷'],                 slots:['17:00'],         emoji:'✂️' },
+  { id:7,  name:'헤어포레',           dist:1.8, rating:4.8, reviews:302, tags:['컷','염색','케어'],   slots:['18:00','20:00'], emoji:'🌲' },
+  { id:8,  name:'더헤어클럽',         dist:2.1, rating:4.3, reviews:44,  tags:['컷','펌'],            slots:[],                emoji:'💈' },
+  { id:9,  name:'컬러팩토리',         dist:2.6, rating:4.7, reviews:128, tags:['염색','케어'],        slots:['19:00'],         emoji:'🎨' },
+  { id:10, name:'헤어갤러리 봄',      dist:3.2, rating:4.9, reviews:89,  tags:['컷','염색','펌'],     slots:['17:00','18:00'], emoji:'🌸' },
+  { id:11, name:'살롱 미뇽',          dist:4.1, rating:4.6, reviews:155, tags:['컷','케어'],          slots:['20:00'],         emoji:'🪷' },
+  { id:12, name:'헤어스튜디오 제로',  dist:4.8, rating:4.5, reviews:71,  tags:['컷','펌','염색'],     slots:['18:00','19:00'], emoji:'⚡' },
+];
+
+// ─── State ───
+let activeDist = 0.5, activeRating = 0, activeSvc = '전체', activeSort = 'dist';
+let bookedSlots = {};
+let pendingBooking = null;
+
+function getFiltered() {
+  let list = SALONS.filter(s =>
+    s.dist <= activeDist &&
+    s.rating >= activeRating &&
+    (activeSvc === '전체' || s.tags.includes(activeSvc))
+  );
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q) || s.tags.some(t => t.includes(q)));
+  if (activeSort === 'dist') list.sort((a,b) => a.dist - b.dist);
+  else if (activeSort === 'rating') list.sort((a,b) => b.rating - a.rating);
+  else list.sort((a,b) => b.reviews - a.reviews);
+  return list;
+}
+
+function starsHtml(r) {
+  const full = Math.floor(r), half = r % 1 >= 0.5;
+  return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half?1:0));
+}
+
+function slotStatus(salonId, time) {
+  const key = salonId + '_' + time;
+  return bookedSlots[key] ? 'full' : 'available';
+}
+
+function render() {
+  const list = getFiltered();
+  document.getElementById('resultCount').innerHTML = `<strong>${list.length}개</strong> 미용실`;
+
+  if (list.length === 0) {
+    document.getElementById('salonList').innerHTML =
+      `<div style="text-align:center;padding:60px 20px;color:var(--sub);font-size:14px;">조건에 맞는 미용실이 없습니다. 필터를 조정해보세요.</div>`;
+    return;
+  }
+
+  document.getElementById('salonList').innerHTML = list.map(s => {
+    const distStr = s.dist < 1 ? (s.dist * 1000) + 'm' : s.dist + 'km';
+    const tagsHtml = s.tags.map(t => `<span class="salon-tag">${t}</span>`).join('');
+    const slotsHtml = s.slots.length > 0
+      ? `<span class="salon-slot-label">오늘 예약가능</span>` +
+        s.slots.map(t => {
+          const st = slotStatus(s.id, t);
+          return st === 'full'
+            ? `<span class="slot-pill" style="opacity:0.5;background:rgba(217,92,92,0.08);color:#B04040;border:1px solid rgba(217,92,92,0.2);">${t} 마감</span>`
+            : `<button class="slot-pill available" onclick="openModal(${s.id},'${s.name}','${t}')">${t}</button>`;
+        }).join('')
+      : `<span style="font-size:12px;color:var(--sub);">오늘 빈자리 없음</span>`;
+
+    return `
+    <div class="salon-card" onclick="void(0)">
+      <div class="salon-thumb">${s.emoji}</div>
+      <div class="salon-info">
+        <div class="salon-card-top">
+          <span class="salon-card-name">${s.name}</span>
+          <span class="salon-card-dist">📍 ${distStr}</span>
+        </div>
+        <div class="salon-rating">
+          <span class="salon-stars">${'★'.repeat(Math.floor(s.rating))}</span>
+          <span class="salon-rating-num">${s.rating}</span>
+          <span>(${s.reviews})</span>
+        </div>
+        <div class="salon-tags">${tagsHtml}</div>
+        <div class="salon-slots">${slotsHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Modal ───
+function openModal(salonId, salonName, time) {
+  pendingBooking = { salonId, salonName, time };
+  document.getElementById('modalTitle').textContent = salonName;
+  document.getElementById('modalSub').textContent = time + ' 슬롯 예약';
+  document.getElementById('modalInfo').innerHTML = `
+    <div class="modal-info-row"><span>미용실</span><span>${salonName}</span></div>
+    <div class="modal-info-row"><span>예약 시간</span><span>${time} ~ ${parseInt(time)+1}:00</span></div>
+    <div class="modal-info-row"><span>상태</span><span style="color:var(--green)">여유 있음</span></div>`;
+  document.getElementById('guestName').value = '';
+  document.getElementById('guestPhone').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('guestName').focus(), 300);
+}
+
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingBooking = null;
+});
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+    pendingBooking = null;
+  }
+});
+document.getElementById('modalSubmit').addEventListener('click', () => {
+  const name = document.getElementById('guestName').value.trim();
+  const phone = document.getElementById('guestPhone').value.trim();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+  if (!phone) { alert('연락처를 입력해주세요.'); return; }
+  if (pendingBooking) {
+    bookedSlots[pendingBooking.salonId + '_' + pendingBooking.time] = true;
+    document.getElementById('modalOverlay').classList.remove('open');
+    render();
+    showToast(`${pendingBooking.salonName} ${pendingBooking.time} 예약 완료! 📱`);
+    pendingBooking = null;
+  }
+});
+
+document.getElementById('guestPhone').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'');
+  if (v.length > 3 && v.length <= 7) v = v.slice(0,3)+'-'+v.slice(3);
+  else if (v.length > 7) v = v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
+  e.target.value = v;
+});
+
+// ─── Filters ───
+document.getElementById('distFilter').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#distFilter .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active'); activeDist = parseFloat(chip.dataset.dist); render();
+});
+document.getElementById('ratingFilter').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#ratingFilter .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active'); activeRating = parseFloat(chip.dataset.rating); render();
+});
+document.getElementById('svcFilter').addEventListener('click', e => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#svcFilter .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active'); activeSvc = chip.dataset.svc; render();
+});
+document.getElementById('sortBar').addEventListener('click', e => {
+  const tab = e.target.closest('.sort-tab'); if (!tab) return;
+  document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active'); activeSort = tab.dataset.sort; render();
+});
+
+function applySearch() { render(); }
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') render(); });
+
+// ─── Toast ───
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  Object.assign(el.style, { position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)', background:'var(--dark)',color:'#fff',padding:'12px 20px',borderRadius:'30px',fontSize:'14px',fontWeight:'600',zIndex:'999',boxShadow:'0 4px 20px rgba(0,0,0,0.2)',whiteSpace:'nowrap',transition:'opacity 0.4s' });
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(), 400); }, 3000);
+}
+
+// ─── Nav ───
+const hamburger = document.getElementById('hamburger');
+const navMenu = document.getElementById('navMenu');
+hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
+
+// ─── URL params ───
+const params = new URLSearchParams(location.search);
+const qParam = params.get('q');
+if (qParam) document.getElementById('searchInput').value = qParam;
+
+render();
+</script>
+</body>
+</html>
