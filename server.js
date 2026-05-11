@@ -7,6 +7,10 @@ const KAKAO_REST_KEY = process.env.KAKAO_REST_KEY || 'e0fbb0b0e576d9627ea2c2e236
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // 카카오 로컬 키워드 검색 프록시
 app.get('/api/salons', async (req, res) => {
   const { lat, lng, radius = 2000, query = '미용실' } = req.query;
