@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>빈자리 보기 — 헤어이어</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -84,7 +86,9 @@
       <input type="text" id="guestName" placeholder="홍길동" maxlength="20" />
       <label for="guestPhone">연락처</label>
       <input type="tel" id="guestPhone" placeholder="010-0000-0000" maxlength="13" />
-      <button class="modal-submit" id="modalSubmit">예약 확정하기</button>
+      <label for="guestService">시술</label>
+      <input type="text" id="guestService" placeholder="커트, 염색, 파마 등" maxlength="30" />
+      <button class="modal-submit" id="modalSubmit">예약 신청하기</button>
     </div>
   </div>
 </div>
@@ -98,139 +102,306 @@
 </footer>
 
 <script>
-const SALONS = [
-  { id:1,  name:'헤어살롱 블랑',      dist:0.3 },
-  { id:2,  name:'스튜디오 레이어',    dist:0.5 },
-  { id:3,  name:'그린헤어',           dist:0.7 },
-  { id:4,  name:'헤어아뜰리에',       dist:0.9 },
-  { id:5,  name:'살롱드파리',         dist:1.2 },
-  { id:6,  name:'커트스튜디오 모노',  dist:1.5 },
-  { id:7,  name:'헤어포레',           dist:1.8 },
-  { id:8,  name:'더헤어클럽',         dist:2.1 },
-  { id:9,  name:'컬러팩토리',         dist:2.6 },
-  { id:10, name:'헤어갤러리 봄',      dist:3.2 },
-  { id:11, name:'살롱 미뇽',          dist:4.1 },
-  { id:12, name:'헤어스튜디오 제로',  dist:4.8 },
-];
-const ALL_TIMES = [13,14,15,16,17,18,19,20,21];
-const STATUS_LABEL = { available:'여유', soon:'임박', full:'마감' };
+/* ═══════════════════════════════════════════════
+   booking.html — Firestore 실시간 예약 그리드
+═══════════════════════════════════════════════ */
+let db = null;
+let firestoreSalons = [];     // onSnapshot으로 유지
+let userLat = null, userLng = null;
+let activeTime = 'now', activeDist = 0.5;
+let pendingBooking = null;
+
 const now = new Date();
 const currentHour = now.getHours();
+const TODAY = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+const ALL_HOURS = [9,10,11,12,13,14,15,16,17,18,19,20,21];
 
-function randomStatus(h) {
-  if (h < currentHour) return 'full';
-  if (h === currentHour) return Math.random() < 0.45 ? 'available' : 'soon';
-  const r = Math.random();
-  if (r < 0.32) return 'available';
-  if (r < 0.58) return 'soon';
-  if (r < 0.82) return 'full';
-  return null;
+/* ── 헬퍼 ── */
+function calcDist(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function fmtDist(m) { return m < 1000 ? Math.round(m)+'m' : (m/1000).toFixed(1)+'km'; }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-const slotData = {};
-SALONS.forEach(s => {
-  slotData[s.id] = {};
-  ALL_TIMES.forEach(h => { slotData[s.id][h] = randomStatus(h); });
-});
+/* ── Firebase 초기화 ── */
+(async () => {
+  try {
+    const cfg = await fetch('/api/firebase-config').then(r => r.json());
+    if (!cfg.projectId) throw new Error('no projectId');
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    listenSalons();
+  } catch (e) {
+    console.warn('Firebase 미연결, 목업 사용:', e.message);
+    loadMockSalons();
+  }
+  getGPS();
+})();
 
-let activeTime = 'now', activeDist = 0.5, pendingBooking = null;
+/* ── GPS ── */
+function getGPS() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    render();
+  }, () => {
+    userLat = 37.5665; userLng = 126.9780; // 서울 기본값
+    render();
+  });
+}
 
+/* ── Firestore 실시간 구독 ── */
+function listenSalons() {
+  db.collection('salons').onSnapshot(snap => {
+    firestoreSalons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => {
+    console.error('Firestore 오류:', err);
+    loadMockSalons();
+  });
+}
+
+/* ── 목업 폴백 ── */
+function loadMockSalons() {
+  const BASE_LAT = 37.5665, BASE_LNG = 126.9780;
+  firestoreSalons = [
+    { id:'m1', name:'헤어살롱 블랑',     lat:BASE_LAT+0.002, lng:BASE_LNG+0.003 },
+    { id:'m2', name:'스튜디오 레이어',   lat:BASE_LAT-0.003, lng:BASE_LNG+0.005 },
+    { id:'m3', name:'그린헤어',          lat:BASE_LAT+0.005, lng:BASE_LNG-0.002 },
+    { id:'m4', name:'헤어아뜰리에',      lat:BASE_LAT-0.006, lng:BASE_LNG-0.004 },
+    { id:'m5', name:'살롱드파리',        lat:BASE_LAT+0.009, lng:BASE_LNG+0.007 },
+  ].map(s => ({
+    ...s,
+    businessHours: { start:10, end:21 },
+    slots: { [TODAY]: genMockSlots() }
+  }));
+  render();
+}
+
+function genMockSlots() {
+  const slots = {};
+  for (let h = 10; h < 21; h++) {
+    const key = `${String(h).padStart(2,'0')}:00`;
+    if (h < currentHour) { slots[key] = 'booked'; continue; }
+    const r = Math.random();
+    slots[key] = r < 0.5 ? 'open' : r < 0.75 ? 'open' : 'booked';
+  }
+  return slots;
+}
+
+/* ── 슬롯 상태 → 화면 상태 변환 ── */
+function slotToDisplay(slotStatus) {
+  if (slotStatus === 'open') return 'available';
+  return 'full'; // booked / blocked 모두 마감
+}
+
+function getAvailSummary(slots) {
+  const values = Object.values(slots || {});
+  const open = values.filter(v => v === 'open').length;
+  const total = values.filter(v => v !== undefined).length;
+  if (!total) return 'full';
+  const ratio = open / total;
+  if (ratio > 0.5) return 'available';
+  if (ratio > 0) return 'soon';
+  return 'full';
+}
+
+/* ── 필터 ── */
 function getVisibleTimes() {
-  if (activeTime === 'now') return ALL_TIMES.filter(h => h >= currentHour && h <= currentHour + 2);
-  if (activeTime === 'any') return ALL_TIMES;
-  return ALL_TIMES.filter(h => h >= parseInt(activeTime));
+  if (activeTime === 'now') return ALL_HOURS.filter(h => h >= currentHour && h <= currentHour + 2);
+  if (activeTime === 'any') return ALL_HOURS;
+  return ALL_HOURS.filter(h => h >= parseInt(activeTime));
 }
 
-function getVisibleSalons() { return SALONS.filter(s => s.dist <= activeDist); }
+function getVisibleSalons() {
+  if (!userLat || !userLng) return firestoreSalons;
+  return firestoreSalons
+    .filter(s => {
+      if (!s.lat || !s.lng) return true; // 위치 없는 살롱은 항상 표시
+      const d = calcDist(userLat, userLng, s.lat, s.lng);
+      return d <= activeDist * 1000;
+    })
+    .map(s => ({
+      ...s,
+      distM: (s.lat && s.lng) ? calcDist(userLat, userLng, s.lat, s.lng) : null
+    }))
+    .sort((a, b) => (a.distM || 9999) - (b.distM || 9999));
+}
 
+/* ── 렌더 ── */
 function render() {
-  const times = getVisibleTimes();
+  const times  = getVisibleTimes();
   const salons = getVisibleSalons();
+  const STATUS_LABEL = { available:'여유', soon:'임박', full:'마감' };
 
   document.getElementById('salonCount').innerHTML =
-    `<strong>${salons.length}개</strong> 미용실`;
+    `<strong>${salons.length}개</strong> 미용실 · 실시간`;
 
   let headHtml = '<tr><th class="salon-col">미용실</th>';
   times.forEach(h => { headHtml += `<th>${h}:00</th>`; });
   headHtml += '</tr>';
   document.getElementById('gridHead').innerHTML = headHtml;
 
-  if (salons.length === 0) {
+  if (!salons.length) {
     document.getElementById('gridBody').innerHTML =
-      `<tr><td colspan="${times.length+1}" style="padding:40px;text-align:center;color:var(--sub);font-size:14px;">선택한 거리 내 미용실이 없습니다.</td></tr>`;
+      `<tr><td colspan="${times.length+1}" style="padding:40px;text-align:center;color:var(--sub);font-size:14px;">등록된 미용실이 없습니다.<br><a href="for-salon.html" style="color:var(--rose)">미용실 등록하기 →</a></td></tr>`;
     return;
   }
 
+  const timeKeys = times.map(h => `${String(h).padStart(2,'0')}:00`);
+
   document.getElementById('gridBody').innerHTML = salons.map(s => {
-    const distStr = s.dist < 1 ? (s.dist * 1000) + 'm' : s.dist + 'km';
-    const cells = times.map(h => {
-      const st = slotData[s.id]?.[h];
-      if (!st) return `<td><button class="slot slot-empty" disabled><span class="slot-time">${h}:00</span><span class="slot-label">—</span></button></td>`;
-      const disabled = st === 'full' ? 'disabled' : `onclick="openModal(${s.id},'${s.name}',${h})"`;
-      return `<td><button class="slot slot-${st}" ${disabled}><span class="slot-time">${h}:00</span><span class="slot-label">${STATUS_LABEL[st]}</span></button></td>`;
+    const todaySlots = s.slots?.[TODAY] || {};
+    const distStr = s.distM != null ? fmtDist(s.distM) : '위치미설정';
+
+    const cells = timeKeys.map((tk, i) => {
+      const h = times[i];
+      const rawSt = todaySlots[tk];
+
+      // 영업시간 밖이면 회색
+      const bh = s.businessHours || { start:10, end:21 };
+      if (h < bh.start || h >= bh.end) {
+        return `<td><button class="slot slot-empty" disabled><span class="slot-time">${h}:00</span><span class="slot-label">휴무</span></button></td>`;
+      }
+
+      if (!rawSt || rawSt === 'booked' || rawSt === 'blocked') {
+        return `<td><button class="slot slot-full" disabled><span class="slot-time">${h}:00</span><span class="slot-label">마감</span></button></td>`;
+      }
+
+      // open
+      const avail = getAvailSummary(todaySlots) === 'available' ? 'available' : 'soon';
+      return `<td><button class="slot slot-${avail}" onclick="openModal('${s.id}','${esc(s.name)}','${tk}')"><span class="slot-time">${h}:00</span><span class="slot-label">${STATUS_LABEL[avail]}</span></button></td>`;
     }).join('');
-    return `<tr><td class="salon-info"><div class="salon-name">${s.name}</div><div class="salon-dist">${distStr}</div></td>${cells}</tr>`;
+
+    return `<tr>
+      <td class="salon-info">
+        <div class="salon-name">${esc(s.name)}</div>
+        <div class="salon-dist">${distStr}</div>
+      </td>${cells}
+    </tr>`;
   }).join('');
 }
 
-function openModal(salonId, salonName, time) {
-  const st = slotData[salonId]?.[time];
-  pendingBooking = { salonId, salonName, time };
+/* ── 모달 ── */
+function openModal(salonId, salonName, timeKey) {
+  const salon = firestoreSalons.find(s => s.id === salonId);
+  const todaySlots = salon?.slots?.[TODAY] || {};
+  const rawSt = todaySlots[timeKey] || 'open';
+  const displaySt = rawSt === 'open' ? 'available' : 'soon';
+  const [hStr] = timeKey.split(':');
+  const hNum = parseInt(hStr);
+
+  pendingBooking = { salonId, salonName, date: TODAY, time: timeKey };
   document.getElementById('modalTitle').textContent = salonName;
-  document.getElementById('modalSub').textContent = time + ':00 슬롯 예약';
+  document.getElementById('modalSub').textContent = `${timeKey} 슬롯 예약 신청`;
   document.getElementById('modalInfo').innerHTML = `
-    <div class="modal-info-row"><span>미용실</span><span>${salonName}</span></div>
-    <div class="modal-info-row"><span>예약 시간</span><span>${time}:00 ~ ${time+1}:00</span></div>
-    <div class="modal-info-row"><span>상태</span><span style="color:${st==='available'?'var(--green)':'var(--yellow)'}">${st==='available'?'여유 있음':'마감 임박'}</span></div>`;
+    <div class="modal-info-row"><span>미용실</span><span>${esc(salonName)}</span></div>
+    <div class="modal-info-row"><span>예약 시간</span><span>${timeKey} ~ ${String(hNum+1).padStart(2,'0')}:00</span></div>
+    <div class="modal-info-row"><span>상태</span><span style="color:${displaySt==='available'?'var(--green)':'var(--yellow)'}">
+      ${displaySt==='available'?'여유 있음':'마감 임박'}</span></div>`;
   document.getElementById('guestName').value = '';
   document.getElementById('guestPhone').value = '';
+  document.getElementById('guestService').value = '';
   document.getElementById('modalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('guestName').focus(), 300);
 }
 
-document.getElementById('modalClose').addEventListener('click', () => { document.getElementById('modalOverlay').classList.remove('open'); pendingBooking=null; });
-document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target===document.getElementById('modalOverlay')){document.getElementById('modalOverlay').classList.remove('open');pendingBooking=null;} });
-document.getElementById('modalSubmit').addEventListener('click', () => {
-  const name = document.getElementById('guestName').value.trim();
-  const phone = document.getElementById('guestPhone').value.trim();
-  if (!name){alert('이름을 입력해주세요.');return;}
-  if (!phone){alert('연락처를 입력해주세요.');return;}
-  if (pendingBooking) {
-    slotData[pendingBooking.salonId][pendingBooking.time] = 'full';
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingBooking = null;
+});
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) {
     document.getElementById('modalOverlay').classList.remove('open');
-    render();
-    showToast(`${pendingBooking.salonName} ${pendingBooking.time}:00 예약 완료! 📱`);
     pendingBooking = null;
   }
 });
-document.getElementById('guestPhone').addEventListener('input', e => {
-  let v=e.target.value.replace(/\D/g,'');
-  if(v.length>3&&v.length<=7)v=v.slice(0,3)+'-'+v.slice(3);
-  else if(v.length>7)v=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
-  e.target.value=v;
+
+document.getElementById('modalSubmit').addEventListener('click', async () => {
+  const name    = document.getElementById('guestName').value.trim();
+  const phone   = document.getElementById('guestPhone').value.trim();
+  const service = document.getElementById('guestService').value.trim();
+  if (!name)  { alert('이름을 입력해주세요.'); return; }
+  if (!phone) { alert('연락처를 입력해주세요.'); return; }
+  if (!pendingBooking) return;
+
+  const btn = document.getElementById('modalSubmit');
+  btn.disabled = true; btn.textContent = '신청 중...';
+
+  const booking = {
+    salonId:      pendingBooking.salonId,
+    salonName:    pendingBooking.salonName,
+    customerName: name,
+    phone,
+    date:         pendingBooking.date,
+    time:         pendingBooking.time,
+    service:      service || '미지정',
+    status:       'pending',
+    createdAt:    db
+      ? firebase.firestore.FieldValue.serverTimestamp()
+      : new Date().toISOString(),
+  };
+
+  try {
+    if (db) {
+      await db.collection('bookings').add(booking);
+    }
+    document.getElementById('modalOverlay').classList.remove('open');
+    showToast(`${pendingBooking.salonName} ${pendingBooking.time} 예약 신청 완료! 사장님 수락 후 확정됩니다 📱`);
+    pendingBooking = null;
+  } catch (err) {
+    alert('예약 신청 실패: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '예약 신청하기';
+  }
 });
 
+document.getElementById('guestPhone').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g,'');
+  if (v.length > 3 && v.length <= 7)  v = v.slice(0,3)+'-'+v.slice(3);
+  else if (v.length > 7) v = v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
+  e.target.value = v;
+});
+
+/* ── 필터 이벤트 ── */
 document.getElementById('timeFilter').addEventListener('click', e => {
-  const chip=e.target.closest('.chip');if(!chip)return;
-  document.querySelectorAll('#timeFilter .chip').forEach(c=>c.classList.remove('active'));
-  chip.classList.add('active');activeTime=chip.dataset.time;render();
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#timeFilter .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active'); activeTime = chip.dataset.time; render();
 });
 document.getElementById('distFilter').addEventListener('click', e => {
-  const chip=e.target.closest('.chip');if(!chip)return;
-  document.querySelectorAll('#distFilter .chip').forEach(c=>c.classList.remove('active'));
-  chip.classList.add('active');activeDist=parseFloat(chip.dataset.dist);render();
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  document.querySelectorAll('#distFilter .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active'); activeDist = parseFloat(chip.dataset.dist); render();
 });
 
+/* ── 토스트 ── */
 function showToast(msg) {
-  const el=document.createElement('div');el.textContent=msg;
-  Object.assign(el.style,{position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)',background:'var(--dark)',color:'#fff',padding:'12px 20px',borderRadius:'30px',fontSize:'14px',fontWeight:'600',zIndex:'999',boxShadow:'0 4px 20px rgba(0,0,0,0.2)',whiteSpace:'nowrap',transition:'opacity 0.4s'});
+  const el = document.createElement('div');
+  el.textContent = msg;
+  Object.assign(el.style, {
+    position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+    background:'var(--dark)', color:'#fff', padding:'12px 20px', borderRadius:'30px',
+    fontSize:'14px', fontWeight:'600', zIndex:'999',
+    boxShadow:'0 4px 20px rgba(0,0,0,0.2)', whiteSpace:'nowrap', transition:'opacity 0.4s',
+    maxWidth:'90vw', textAlign:'center',
+  });
   document.body.appendChild(el);
-  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),400);},3000);
+  setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(), 400); }, 4000);
 }
 
-const hamburger=document.getElementById('hamburger'),navMenu=document.getElementById('navMenu');
-hamburger.addEventListener('click',()=>navMenu.classList.toggle('open'));
-navMenu.querySelectorAll('a').forEach(l=>l.addEventListener('click',()=>navMenu.classList.remove('open')));
+/* ── 햄버거 ── */
+const hamburger = document.getElementById('hamburger'), navMenu = document.getElementById('navMenu');
+hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
+navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
 
 render();
 </script>

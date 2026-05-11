@@ -6,6 +6,220 @@
   <title>사장님용 — 헤어이어</title>
   <meta name="description" content="남은 예약 슬롯을 실시간 공개해 공석을 수익으로 바꾸세요." />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    /* ── 대시보드 ─────────────────────────────── */
+    .salon-dashboard {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0 0;
+    }
+    .dashboard-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dashboard-top h2 {
+      font-size: 22px;
+      color: var(--dark);
+    }
+    .fb-status {
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    .fb-status.ok  { background: #E8F5EE; color: #2D8C5E; }
+    .fb-status.err { background: #FEE8E8; color: #C0392B; }
+    .dash-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+    }
+    .dash-tab {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sub);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      position: relative;
+      transition: color 0.15s;
+    }
+    .dash-tab.active { color: var(--rose); border-bottom-color: var(--rose); }
+    .dash-panel { display: none; padding: 24px 0 32px; }
+    .dash-panel.active { display: block; }
+    .dash-form-row {
+      margin-bottom: 14px;
+    }
+    .dash-form-row label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .dash-form-row input,
+    .dash-form-row select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      color: var(--dark);
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .dash-form-row input:focus,
+    .dash-form-row select:focus { border-color: var(--rose); }
+    .dash-form-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .dash-msg {
+      margin-top: 12px;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+    .dash-msg.success { background: #E8F5EE; color: #2D8C5E; }
+    .dash-msg.error   { background: #FEE8E8; color: #C0392B; }
+    /* 스케줄 그리드 */
+    .schedule-wrap { margin-top: 16px; }
+    .schedule-date {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 12px;
+    }
+    .slot-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .slot-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .slot-btn.open    { background: #E8F5EE; color: #2D8C5E; }
+    .slot-btn.open:hover { background: #d0eddd; }
+    .slot-btn.blocked { background: var(--border); color: var(--sub); }
+    .slot-btn.booked  { background: #FEE8E8; color: #C0392B; cursor: not-allowed; }
+    /* 예약 알림 카드 */
+    .booking-card {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .booking-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .booking-card-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .booking-card-time {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--rose);
+    }
+    .booking-card-info {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 12px;
+    }
+    .booking-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-confirm {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: var(--green);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-reject {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: var(--red);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: var(--red);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .badge[data-count="0"] { display: none; }
+    .salon-select-row {
+      margin-bottom: 16px;
+    }
+    .salon-select-row label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+    .salon-select-row select {
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      color: var(--dark);
+      background: #fff;
+      outline: none;
+      min-width: 240px;
+    }
+    .empty-msg {
+      color: var(--sub);
+      font-size: 14px;
+      text-align: center;
+      padding: 32px 0;
+    }
+    @media (max-width: 600px) {
+      .dash-form-2col { grid-template-columns: 1fr; }
+      .dash-tab { padding: 10px 14px; font-size: 13px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -23,6 +237,98 @@
     </div>
   </nav>
 </header>
+
+<!-- ─── 사장님 대시보드 ─── -->
+<section class="salon-dashboard">
+  <div class="container">
+    <div class="dashboard-top">
+      <h2 class="serif">사장님 대시보드</h2>
+      <span class="fb-status err" id="fbStatus">Firebase 연결 중...</span>
+    </div>
+    <div class="dash-tabs">
+      <button class="dash-tab active" onclick="switchTab(0)">내 미용실 등록</button>
+      <button class="dash-tab" onclick="switchTab(1)">스케줄 관리</button>
+      <button class="dash-tab" onclick="switchTab(2)">예약 알림 <span class="badge" id="pendingBadge" data-count="0">0</span></button>
+    </div>
+
+    <!-- 탭 0: 등록 -->
+    <div class="dash-panel active" id="dashPanel0">
+      <form id="regForm" onsubmit="registerSalon(event)">
+        <div class="dash-form-row">
+          <label>미용실 이름 *</label>
+          <input type="text" id="regName" placeholder="예: 헤어살롱 블랑" required />
+        </div>
+        <div class="dash-form-row">
+          <label>주소 *</label>
+          <input type="text" id="regAddress" placeholder="서울시 마포구 서교동..." required />
+        </div>
+        <div class="dash-form-row">
+          <label>전화번호 *</label>
+          <input type="tel" id="regPhone" placeholder="02-1234-5678" required />
+        </div>
+        <div class="dash-form-2col">
+          <div class="dash-form-row">
+            <label>위도 (선택 — 지도 표시용)</label>
+            <input type="number" id="regLat" placeholder="37.5665" step="0.000001" />
+          </div>
+          <div class="dash-form-row">
+            <label>경도 (선택 — 지도 표시용)</label>
+            <input type="number" id="regLng" placeholder="126.9780" step="0.000001" />
+          </div>
+        </div>
+        <div class="dash-form-2col">
+          <div class="dash-form-row">
+            <label>영업 시작 시간</label>
+            <select id="regStart">
+              <option value="9">9시</option>
+              <option value="10" selected>10시</option>
+              <option value="11">11시</option>
+              <option value="12">12시</option>
+            </select>
+          </div>
+          <div class="dash-form-row">
+            <label>영업 종료 시간</label>
+            <select id="regEnd">
+              <option value="18">18시</option>
+              <option value="19">19시</option>
+              <option value="20">20시</option>
+              <option value="21" selected>21시</option>
+              <option value="22">22시</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="regBtn">Firestore에 등록하기</button>
+      </form>
+      <div id="regMsg" class="dash-msg" style="display:none"></div>
+    </div>
+
+    <!-- 탭 1: 스케줄 관리 -->
+    <div class="dash-panel" id="dashPanel1">
+      <div class="salon-select-row">
+        <label>관리할 미용실</label>
+        <select id="scheduleSalonSel" onchange="loadSchedule()">
+          <option value="">-- 미용실을 선택하세요 --</option>
+        </select>
+      </div>
+      <div id="scheduleWrap">
+        <p class="empty-msg">미용실을 선택하면 오늘 스케줄이 표시됩니다.</p>
+      </div>
+    </div>
+
+    <!-- 탭 2: 예약 알림 -->
+    <div class="dash-panel" id="dashPanel2">
+      <div class="salon-select-row">
+        <label>미용실 선택</label>
+        <select id="alertSalonSel" onchange="loadAlerts()">
+          <option value="">-- 미용실을 선택하세요 --</option>
+        </select>
+      </div>
+      <div id="alertsWrap">
+        <p class="empty-msg">미용실을 선택하면 예약 알림이 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ─── Hero ─── -->
 <section class="salon-hero">
@@ -271,10 +577,269 @@ function toggleFaq(btn) {
   const item = btn.closest('.faq-item');
   item.classList.toggle('open');
 }
-
 const hamburger = document.getElementById('hamburger'), navMenu = document.getElementById('navMenu');
 hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════
+   사장님 대시보드 — Firebase 연동
+═══════════════════════════════════════════════ */
+let db = null;
+let salonsList = [];          // Firestore salons 전체 목록
+let unsubAlerts = null;       // 예약알림 onSnapshot 해제 함수
+let selectedScheduleSalon = null;
+
+const TODAY = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+})();
+
+/* ── Firebase 초기화 ── */
+(async () => {
+  try {
+    const cfg = await fetch('/api/firebase-config').then(r => r.json());
+    if (!cfg.projectId) throw new Error('projectId 없음');
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    document.getElementById('fbStatus').textContent = 'Firebase 연결됨';
+    document.getElementById('fbStatus').className = 'fb-status ok';
+    listenSalons();
+    requestNotifPermission();
+  } catch (e) {
+    document.getElementById('fbStatus').textContent = 'Firebase 미설정';
+    document.getElementById('fbStatus').className = 'fb-status err';
+    console.warn('Firebase init error:', e);
+  }
+})();
+
+/* ── Salons 실시간 수신 ── */
+function listenSalons() {
+  firebase.firestore().collection('salons').onSnapshot(snap => {
+    salonsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    populateSalonSelects();
+  });
+}
+
+function populateSalonSelects() {
+  ['scheduleSalonSel', 'alertSalonSel'].forEach(id => {
+    const sel = document.getElementById(id);
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">-- 미용실을 선택하세요 --</option>';
+    salonsList.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+  });
+}
+
+/* ── 탭 전환 ── */
+function switchTab(n) {
+  document.querySelectorAll('.dash-tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.dash-panel').forEach((p, i) => p.classList.toggle('active', i === n));
+}
+
+/* ── 탭0: 미용실 등록 ── */
+async function registerSalon(e) {
+  e.preventDefault();
+  if (!db) return showRegMsg('Firebase가 연결되지 않았습니다.', 'error');
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = '저장 중...';
+
+  const salon = {
+    name:          document.getElementById('regName').value.trim(),
+    address:       document.getElementById('regAddress').value.trim(),
+    phone:         document.getElementById('regPhone').value.trim(),
+    lat:           parseFloat(document.getElementById('regLat').value) || null,
+    lng:           parseFloat(document.getElementById('regLng').value) || null,
+    businessHours: {
+      start: parseInt(document.getElementById('regStart').value),
+      end:   parseInt(document.getElementById('regEnd').value),
+    },
+    slots:       {},
+    createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  // 오늘 슬롯 초기화
+  salon.slots[TODAY] = initSlots(salon.businessHours);
+
+  try {
+    await db.collection('salons').add(salon);
+    document.getElementById('regForm').reset();
+    showRegMsg(`"${salon.name}" 등록 완료!`, 'success');
+  } catch (err) {
+    showRegMsg('저장 실패: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Firestore에 등록하기';
+  }
+}
+
+function showRegMsg(msg, type) {
+  const el = document.getElementById('regMsg');
+  el.textContent = msg;
+  el.className = 'dash-msg ' + type;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function initSlots(bh) {
+  const slots = {};
+  for (let h = bh.start; h < bh.end; h++) {
+    slots[`${String(h).padStart(2,'0')}:00`] = 'open';
+  }
+  return slots;
+}
+
+/* ── 탭1: 스케줄 관리 ── */
+async function loadSchedule() {
+  const salonId = document.getElementById('scheduleSalonSel').value;
+  const wrap = document.getElementById('scheduleWrap');
+  if (!salonId || !db) {
+    wrap.innerHTML = '<p class="empty-msg">미용실을 선택하면 오늘 스케줄이 표시됩니다.</p>';
+    return;
+  }
+  const salon = salonsList.find(s => s.id === salonId);
+  if (!salon) return;
+  selectedScheduleSalon = salon;
+  renderSchedule(salon);
+}
+
+function renderSchedule(salon) {
+  const wrap = document.getElementById('scheduleWrap');
+  const todaySlots = salon.slots?.[TODAY] || initSlots(salon.businessHours);
+  const times = Object.keys(todaySlots).sort();
+
+  wrap.innerHTML = `
+    <div class="schedule-wrap">
+      <div class="schedule-date">📅 오늘 (${TODAY}) 슬롯 — 클릭해서 열림/차단 전환</div>
+      <div class="slot-grid" id="slotGrid">
+        ${times.map(t => {
+          const st = todaySlots[t];
+          const label = st === 'open' ? `${t} 열림` : st === 'booked' ? `${t} 예약됨` : `${t} 차단`;
+          return `<button class="slot-btn ${st}" onclick="toggleSlot('${salon.id}','${t}','${st}')">${label}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+async function toggleSlot(salonId, time, currentStatus) {
+  if (!db || currentStatus === 'booked') return;
+  const newStatus = currentStatus === 'open' ? 'blocked' : 'open';
+  try {
+    await db.collection('salons').doc(salonId).update({
+      [`slots.${TODAY}.${time}`]: newStatus
+    });
+    // 목록 갱신 (listenSalons가 자동으로 처리하지만 즉시 반영용)
+    const salon = salonsList.find(s => s.id === salonId);
+    if (salon) {
+      if (!salon.slots) salon.slots = {};
+      if (!salon.slots[TODAY]) salon.slots[TODAY] = {};
+      salon.slots[TODAY][time] = newStatus;
+      renderSchedule(salon);
+    }
+  } catch (err) {
+    alert('슬롯 업데이트 실패: ' + err.message);
+  }
+}
+
+/* ── 탭2: 예약 알림 ── */
+function loadAlerts() {
+  const salonId = document.getElementById('alertSalonSel').value;
+  const wrap = document.getElementById('alertsWrap');
+  if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
+  if (!salonId || !db) {
+    wrap.innerHTML = '<p class="empty-msg">미용실을 선택하면 예약 알림이 표시됩니다.</p>';
+    return;
+  }
+
+  let prevIds = new Set();
+  unsubAlerts = db.collection('bookings')
+    .where('salonId', '==', salonId)
+    .where('status', '==', 'pending')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // 새 예약 푸시 알림
+      bookings.forEach(b => {
+        if (!prevIds.has(b.id)) {
+          pushNotify(`새 예약: ${b.customerName}`, `${b.date} ${b.time} · ${b.service}`);
+        }
+      });
+      prevIds = new Set(bookings.map(b => b.id));
+
+      // 뱃지 업데이트
+      const badge = document.getElementById('pendingBadge');
+      badge.textContent = bookings.length;
+      badge.dataset.count = bookings.length;
+
+      renderAlerts(bookings, salonId);
+    });
+}
+
+function renderAlerts(bookings, salonId) {
+  const wrap = document.getElementById('alertsWrap');
+  if (!bookings.length) {
+    wrap.innerHTML = '<p class="empty-msg">대기 중인 예약이 없습니다.</p>';
+    return;
+  }
+  wrap.innerHTML = bookings.map(b => `
+    <div class="booking-card" id="bc-${b.id}">
+      <div class="booking-card-header">
+        <div class="booking-card-name">${esc(b.customerName)}</div>
+        <div class="booking-card-time">${b.date} ${b.time}</div>
+      </div>
+      <div class="booking-card-info">
+        📞 ${esc(b.phone)} &nbsp;·&nbsp; 💇 ${esc(b.service || '미지정')}
+      </div>
+      <div class="booking-card-actions">
+        <button class="btn-confirm" onclick="confirmBooking('${b.id}','${salonId}','${b.date}','${b.time}')">수락 ✓</button>
+        <button class="btn-reject"  onclick="rejectBooking('${b.id}','${salonId}','${b.date}','${b.time}')">거절 ✗</button>
+      </div>
+    </div>`).join('');
+}
+
+async function confirmBooking(bookingId, salonId, date, time) {
+  if (!db) return;
+  try {
+    const batch = db.batch();
+    batch.update(db.collection('bookings').doc(bookingId), { status: 'confirmed' });
+    batch.update(db.collection('salons').doc(salonId), { [`slots.${date}.${time}`]: 'booked' });
+    await batch.commit();
+  } catch (err) { alert('수락 실패: ' + err.message); }
+}
+
+async function rejectBooking(bookingId, salonId, date, time) {
+  if (!db) return;
+  try {
+    const batch = db.batch();
+    batch.update(db.collection('bookings').doc(bookingId), { status: 'rejected' });
+    batch.update(db.collection('salons').doc(salonId), { [`slots.${date}.${time}`]: 'open' });
+    await batch.commit();
+  } catch (err) { alert('거절 실패: ' + err.message); }
+}
+
+/* ── 푸시 알림 ── */
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function pushNotify(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/favicon.ico' });
+  }
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>

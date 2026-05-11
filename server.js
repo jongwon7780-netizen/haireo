@@ -99,6 +99,18 @@ app.get('/api/search-location', async (req, res) => {
   }
 });
 
+// Firebase 클라이언트 설정 전달 (키를 브라우저에 직접 노출하지 않기 위한 프록시)
+app.get('/api/firebase-config', (req, res) => {
+  res.json({
+    apiKey:            process.env.FIREBASE_API_KEY             || '',
+    authDomain:        process.env.FIREBASE_AUTH_DOMAIN         || '',
+    projectId:         process.env.FIREBASE_PROJECT_ID          || '',
+    storageBucket:     process.env.FIREBASE_STORAGE_BUCKET      || '',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+    appId:             process.env.FIREBASE_APP_ID              || '',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`헤어이어 서버 실행 중 → http://localhost:${PORT}`);
 });

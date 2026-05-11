@@ -425,6 +425,8 @@
 
 <!-- 카카오 지도 JS SDK (autoload=false → kakao.maps.load로 타이밍 제어) -->
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e4e580287e144cfed4c34509ce1858d9&autoload=false"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   /* ── 전역 상태 ── */
   var map, infoOv;
@@ -860,6 +862,92 @@
       var c = map.getCenter();
       fetchSalons(c.getLat(), c.getLng());
     }
+  }
+
+  /* ── Firestore 살롱 오버레이 ── */
+  var fsDb = null;
+  var fsPinOvs = [];
+  var fsUnsubSalons = null;
+  var fsToday = (function () {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
+  })();
+
+  (async function initFirebaseIndex() {
+    try {
+      var cfg = await fetch('/api/firebase-config').then(function(r){ return r.json(); });
+      if (!cfg.projectId) return;
+      if (!firebase.apps.length) firebase.initializeApp(cfg);
+      fsDb = firebase.firestore();
+      listenFirestoreSalons();
+    } catch(e) { /* Firebase 미설정 시 Kakao만 사용 */ }
+  })();
+
+  function listenFirestoreSalons() {
+    if (fsUnsubSalons) fsUnsubSalons();
+    fsUnsubSalons = fsDb.collection('salons').onSnapshot(function(snap) {
+      clearFsPins();
+      snap.docs.forEach(function(d, i) {
+        var s = Object.assign({ id: d.id }, d.data());
+        if (!s.lat || !s.lng) return;
+        var pos = new kakao.maps.LatLng(s.lat, s.lng);
+
+        /* 오늘 빈자리 계산 */
+        var slots = (s.slots && s.slots[fsToday]) || {};
+        var vals = Object.values(slots);
+        var openCnt = vals.filter(function(v){ return v === 'open'; }).length;
+        var avail = openCnt === 0 ? 'full'
+                  : openCnt / Math.max(vals.length, 1) > 0.4 ? 'available' : 'soon';
+
+        /* 핀 엘리먼트 */
+        var el = document.createElement('div');
+        el.className = 'map-pin';
+        el.style.cssText = 'border:2px solid ' + (avail === 'available' ? '#4CAF82' : avail === 'soon' ? '#E8A838' : '#aaa') + ';';
+        el.textContent = '★ ' + s.name;
+
+        var ov = new kakao.maps.CustomOverlay({ position: pos, content: el, yAnchor: 1, zIndex: 5 });
+        ov.setMap(map);
+        fsPinOvs.push(ov);
+
+        /* 클릭 → 말풍선 */
+        var capturedS = s, capturedAvail = avail, capturedI = i;
+        el.addEventListener('click', function(e) {
+          e.stopPropagation();
+          openFsInfo(capturedS, pos, capturedAvail);
+        });
+      });
+    });
+  }
+
+  function clearFsPins() {
+    fsPinOvs.forEach(function(o){ o.setMap(null); });
+    fsPinOvs = [];
+  }
+
+  function openFsInfo(s, pos, avail) {
+    closeInfo();
+    var bdStyle = avail === 'available'
+      ? 'background:rgba(76,175,130,.12);color:#2D8C5E;border:1px solid rgba(76,175,130,.3)'
+      : avail === 'soon'
+        ? 'background:rgba(232,168,56,.12);color:#B07A18;border:1px solid rgba(232,168,56,.3)'
+        : 'background:rgba(217,92,92,.08);color:#B04040;border:1px solid rgba(217,92,92,.2)';
+    var bdTxt = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
+
+    var el = document.createElement('div');
+    el.style.cssText = 'background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.15);' +
+      'padding:14px 16px 13px;min-width:178px;font-family:\'Noto Sans KR\',sans-serif;position:relative';
+    el.innerHTML =
+      '<button onclick="closeInfo()" style="position:absolute;top:9px;right:9px;background:#F2E8E4;border:none;border-radius:50%;width:23px;height:23px;font-size:11px;color:#7A7A7A;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>' +
+      '<div style="font-size:11px;color:var(--rose);font-weight:700;margin-bottom:4px">★ 등록 미용실</div>' +
+      '<div style="font-size:14px;font-weight:700;color:#2D2D2D;margin-bottom:7px;padding-right:28px">' + esc(s.name) + '</div>' +
+      '<div style="font-size:12px;color:#7A7A7A;margin-bottom:7px">' + esc(s.address || '') + '</div>' +
+      '<div style="' + bdStyle + ';font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;display:inline-block;margin-bottom:9px">' + bdTxt + '</div>' +
+      '<a href="booking.html" style="display:block;background:#C4725A;color:#fff;font-size:13px;font-weight:700;padding:8px;border-radius:9px;text-align:center;text-decoration:none">예약하기 →</a>';
+
+    infoOv = new kakao.maps.CustomOverlay({ position: pos, content: el, yAnchor: 1.12, zIndex: 10 });
+    infoOv.setMap(map);
   }
 
   /* ── 패널 토글 ── */
