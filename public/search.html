@@ -189,6 +189,7 @@ function render() {
         </div>
         <div class="salon-tags">${tagsHtml}</div>
         <div class="salon-slots">${slotsHtml}</div>
+        <a class="salon-style-btn" href="style.html?salon=${encodeURIComponent(s.name)}">스타일카드 작성하기 →</a>
       </div>
     </div>`;
   }).join('');
@@ -287,5 +288,24 @@ if (qParam) document.getElementById('searchInput').value = qParam;
 
 render();
 </script>
+<style>
+.salon-style-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--rose);
+  color: var(--rose);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.salon-style-btn:hover {
+  background: var(--rose);
+  color: #fff;
+}
+</style>
+<script src="login-modal.js"></script>
 </body>
 </html>

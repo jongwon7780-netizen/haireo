@@ -11,510 +11,393 @@
           integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
           crossorigin="anonymous"></script>
   <style>
+    :root {
+      --cream:#F9F5F0; --rose:#C4725A; --rose-dark:#A85A44;
+      --rose-light:#F2E8E4; --dark:#2D2D2D; --sub:#7A7A7A; --border:#E8E0D8;
+    }
     body { background: var(--cream); min-height: 100vh; }
 
-    /* ── 위자드 래퍼 ── */
-    .wz {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 0 0 100px;
-    }
+    /* ── 위자드 ── */
+    .wz { max-width: 480px; margin: 0 auto; padding: 0 0 110px; }
 
-    /* ── 진행 바 ── */
+    /* ── 진행 표시 ── */
     .prog {
-      position: sticky;
-      top: 60px;
-      z-index: 50;
+      position: sticky; top: 60px; z-index: 50;
       background: var(--cream);
-      padding: 14px 20px 10px;
+      padding: 12px 20px 10px;
       border-bottom: 1px solid var(--border);
     }
-    .prog-steps {
-      display: flex;
-      gap: 6px;
-    }
+    .prog-dots { display: flex; gap: 6px; }
     .prog-dot {
-      flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--border);
-      transition: background 0.3s;
+      flex: 1; height: 4px; border-radius: 2px;
+      background: var(--border); transition: background 0.35s;
     }
-    .prog-dot.done { background: var(--rose); }
-    .prog-label {
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--sub);
-    }
-    .prog-label strong { color: var(--rose); }
+    .prog-dot.on { background: var(--rose); }
+    .prog-lbl { margin-top: 7px; font-size: 12px; color: var(--sub); }
+    .prog-lbl strong { color: var(--rose); }
 
-    /* ── 단계 ── */
+    /* ── 단계 패널 ── */
     .step { display: none; padding: 24px 20px 8px; }
-    .step.active { display: block; }
+    .step.on { display: block; }
     .step-title {
       font-family: 'Noto Serif KR', serif;
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--dark);
-      margin-bottom: 4px;
-      line-height: 1.35;
+      font-size: 20px; font-weight: 600;
+      color: var(--dark); margin-bottom: 4px; line-height: 1.35;
     }
-    .step-hint {
-      font-size: 13px;
-      color: var(--sub);
-      margin-bottom: 22px;
+    .step-hint { font-size: 13px; color: var(--sub); margin-bottom: 24px; }
+
+    /* ── 미용실 배지 ── */
+    .salon-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--rose-light); border-radius: 20px;
+      padding: 6px 14px; margin-bottom: 20px;
     }
+    .salon-chip-name { font-size: 14px; font-weight: 700; color: var(--rose); }
+
+    /* ── 성별 버튼 ── */
+    .gender-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
+      margin-bottom: 28px;
+    }
+    .gender-btn {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; padding: 20px 8px;
+      border-radius: 16px; border: 2px solid var(--border);
+      background: #fff; cursor: pointer;
+      transition: all 0.15s; user-select: none;
+    }
+    .gender-btn:hover { border-color: var(--rose-light); }
+    .gender-btn.sel { border-color: var(--rose); background: var(--rose-light); }
+    .gender-em { font-size: 32px; }
+    .gender-lbl { font-size: 15px; font-weight: 700; color: var(--dark); }
+    .gender-btn.sel .gender-lbl { color: var(--rose); }
 
     /* ── 사진 ── */
     .photo-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
-      overflow-x: auto;
-      padding-bottom: 4px;
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 8px;
     }
-    .photo-slot {
-      flex: 0 0 88px;
-      height: 88px;
-      border-radius: 12px;
-      border: 2px dashed var(--border);
-      background: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
+    .pslot {
+      flex: 0 0 80px; height: 80px;
+      border-radius: 12px; border: 2px dashed var(--border);
+      background: #fff; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer; position: relative; overflow: hidden;
       transition: border-color 0.2s;
     }
-    .photo-slot:hover, .photo-slot.add:hover { border-color: var(--rose); }
-    .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
-    .photo-slot .rm {
-      position: absolute; top: 3px; right: 3px;
-      width: 20px; height: 20px;
-      background: rgba(0,0,0,0.5);
-      border: none; border-radius: 50%;
-      color: #fff; font-size: 11px;
-      cursor: pointer; z-index: 2;
-      display: flex; align-items: center; justify-content: center;
+    .pslot:hover { border-color: var(--rose); }
+    .pslot img { width:100%; height:100%; object-fit:cover; }
+    .pslot .rm {
+      position: absolute; top:3px; right:3px; width:20px; height:20px;
+      border-radius:50%; background:rgba(0,0,0,0.5); border:none;
+      color:#fff; font-size:11px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
     }
-    .add-icon { font-size: 22px; color: var(--sub); }
-    .add-lbl  { font-size: 10px; color: var(--sub); margin-top: 3px; }
     #photoInput { display: none; }
 
     /* ── 섹션 레이블 ── */
-    .sec-lbl {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--sub);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
+    .slbl { font-size:11px; font-weight:700; color:var(--sub); letter-spacing:.5px; text-transform:uppercase; margin-bottom:10px; }
 
     /* ── 키워드 카드 ── */
-    .kw-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-      margin-bottom: 24px;
-    }
+    .kw-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:22px; }
     .kw-card {
-      padding: 14px 10px;
-      border-radius: 14px;
-      border: 2px solid var(--border);
-      background: #fff;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.15s;
-      user-select: none;
+      padding:14px 10px; border-radius:14px;
+      border:2px solid var(--border); background:#fff;
+      text-align:center; cursor:pointer; transition:all 0.15s; user-select:none;
     }
-    .kw-card.sel {
-      border-color: var(--rose);
-      background: var(--rose-light);
-    }
-    .kw-card .em { font-size: 26px; }
-    .kw-card .nm {
-      font-size: 14px; font-weight: 700;
-      color: var(--dark); margin-top: 5px;
-    }
+    .kw-card.sel { border-color:var(--rose); background:var(--rose-light); }
+    .kw-card .em { font-size:26px; }
+    .kw-card .nm { font-size:14px; font-weight:700; color:var(--dark); margin-top:5px; }
 
     /* ── 색상 칩 ── */
-    .color-row {
-      display: flex; flex-wrap: wrap; gap: 7px;
-      margin-bottom: 8px;
+    .color-row { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:8px; }
+    .c-chip {
+      padding:7px 14px; border-radius:20px;
+      border:1.5px solid var(--border); background:#fff;
+      font-size:13px; color:var(--dark);
+      cursor:pointer; user-select:none; transition:all 0.15s;
     }
-    .color-chip {
-      padding: 7px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: #fff;
-      font-size: 13px; color: var(--dark);
-      cursor: pointer; user-select: none;
-      transition: all 0.15s;
-    }
-    .color-chip.sel {
-      background: var(--dark);
-      border-color: var(--dark);
-      color: #fff;
-    }
+    .c-chip.sel { background:var(--dark); border-color:var(--dark); color:#fff; }
 
-    /* ── 길이 바 ── */
-    .len-wrap { margin: 8px 0 28px; padding: 0 4px; }
-    .len-track {
-      position: relative; height: 6px;
-      background: var(--border); border-radius: 3px;
+    /* ── 자유 입력 ── */
+    .free-textarea {
+      width:100%; min-height:130px;
+      border-radius:14px; border:1.5px solid var(--border);
+      padding:14px 16px; font-size:15px; line-height:1.7;
+      font-family:'Noto Sans KR',sans-serif; color:var(--dark);
+      background:#fff; resize:none; outline:none;
+      box-sizing:border-box; margin-bottom:16px;
     }
-    .len-fill {
-      position: absolute; left: 0; top: 0; height: 100%;
-      background: var(--rose); border-radius: 3px;
-      transition: width 0.3s;
-    }
-    .len-ticks {
-      display: flex; justify-content: space-between;
-      margin-top: 14px;
-    }
-    .len-tick {
-      display: flex; flex-direction: column;
-      align-items: center; cursor: pointer; gap: 6px;
-    }
-    .len-tick .dot {
-      width: 18px; height: 18px; border-radius: 50%;
-      border: 2px solid var(--border); background: #fff;
-      transition: all 0.2s;
-    }
-    .len-tick.sel .dot { border-color: var(--rose); background: var(--rose); }
-    .len-tick .lbl { font-size: 11px; color: var(--sub); text-align: center; }
-    .len-tick.sel .lbl { color: var(--rose); font-weight: 700; }
+    .free-textarea:focus { border-color:var(--rose); }
+    .free-textarea::placeholder { color:#bbb; }
 
-    /* ── 소심 모드 ── */
-    .shy-block { margin-bottom: 18px; }
-    .shy-block-title {
-      font-size: 13px; font-weight: 700;
-      color: var(--dark); margin-bottom: 8px;
+    /* ── 카드 미리보기 ── */
+    .card-wrap {
+      background:#fff; border-radius:16px; border:1px solid var(--border);
+      overflow:hidden; margin-bottom:16px;
     }
-    .shy-opts { display: flex; gap: 8px; flex-wrap: wrap; }
-    .shy-opt {
-      padding: 9px 16px; border-radius: 20px;
-      border: 1.5px solid var(--border); background: #fff;
-      font-size: 13px; color: var(--dark);
-      cursor: pointer; transition: all 0.15s; user-select: none;
+    .card-top {
+      background:var(--rose); padding:18px 20px;
+      display:flex; align-items:center; gap:12px;
     }
-    .shy-opt.sel {
-      border-color: var(--rose); background: var(--rose-light);
-      color: var(--rose); font-weight: 700;
+    .card-top-icon {
+      width:40px; height:40px; border-radius:50%;
+      background:rgba(255,255,255,0.25);
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; flex-shrink:0;
     }
+    .card-top-text {}
+    .card-salon-name { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:600; color:#fff; }
+    .card-brand { font-size:12px; color:rgba(255,255,255,0.75); margin-top:2px; }
+    .card-body { padding:16px 20px 20px; }
+    .card-row { padding:8px 0; border-bottom:1px solid #f5f0eb; display:flex; align-items:flex-start; gap:10px; }
+    .card-row:last-child { border-bottom:none; }
+    .ckey { font-size:12px; color:var(--sub); min-width:44px; padding-top:2px; flex-shrink:0; }
+    .cval { font-size:15px; font-weight:700; color:var(--dark); }
+    .cval.note { font-size:14px; font-weight:400; line-height:1.65; }
+    .card-tags { display:flex; flex-wrap:wrap; gap:6px; padding:12px 20px 16px; border-top:1px solid var(--border); }
+    .ctag { padding:4px 10px; border-radius:20px; font-size:12px; background:var(--rose-light); color:var(--rose); }
 
-    /* ── Step 3 카드 ── */
-    .card-preview {
-      background: #fff;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      padding: 20px;
-      margin-bottom: 16px;
+    /* ── Step 3 액션 버튼 ── */
+    .btn-show {
+      display:block; width:100%; padding:16px; margin-bottom:10px;
+      border-radius:14px; border:none;
+      background:var(--rose); color:#fff;
+      font-size:16px; font-weight:700; cursor:pointer;
+      font-family:'Noto Sans KR',sans-serif;
+      transition:background 0.15s; text-align:center;
     }
-    .card-header {
-      display: flex; align-items: center; gap: 10px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 14px;
+    .btn-show:hover { background:var(--rose-dark); }
+    .btn-book {
+      display:block; width:100%; padding:15px;
+      border-radius:14px; border:1.5px solid var(--rose); background:#fff;
+      color:var(--rose); font-size:15px; font-weight:700;
+      cursor:pointer; font-family:'Noto Sans KR',sans-serif;
+      transition:all 0.15s; text-align:center;
     }
-    .card-logo {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--rose);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; color: #fff; font-weight: 700;
-      flex-shrink: 0;
-    }
-    .card-brand { font-family: 'Noto Serif KR', serif; font-size: 14px; font-weight: 600; }
-    .card-date  { margin-left: auto; font-size: 12px; color: var(--sub); }
-    .card-row {
-      display: flex; align-items: baseline;
-      gap: 10px; padding: 6px 0;
-      border-bottom: 1px solid #f5f0eb;
-    }
-    .card-row:last-child { border-bottom: none; }
-    .card-key  { font-size: 12px; color: var(--sub); min-width: 52px; flex-shrink: 0; }
-    .card-val  { font-size: 15px; font-weight: 700; color: var(--dark); }
-    .card-val.large { font-size: 17px; }
-    .card-tags {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      margin-top: 14px;
-    }
-    .ctag {
-      padding: 4px 10px; border-radius: 20px;
-      font-size: 12px; background: var(--rose-light); color: var(--rose);
-    }
-    .card-memo {
-      margin-top: 12px; padding: 10px 12px;
-      background: var(--cream); border-radius: 8px;
-      font-size: 13px; color: var(--dark); line-height: 1.6;
-    }
+    .btn-book:hover { background:var(--rose-light); }
 
-    /* ── 메모 입력 ── */
-    .memo-input {
-      width: 100%; min-height: 72px;
-      border-radius: 12px; border: 1.5px solid var(--border);
-      padding: 12px 14px; font-size: 14px;
-      font-family: 'Noto Sans KR', sans-serif;
-      color: var(--dark); background: #fff;
-      resize: none; outline: none; box-sizing: border-box;
-      margin-bottom: 14px;
-    }
-    .memo-input:focus { border-color: var(--rose); }
-
-    /* ── 하단 버튼 ── */
+    /* ── 하단 네비 ── */
     .nav-btns {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      max-width: 480px; margin: 0 auto;
-      display: flex; gap: 10px;
-      padding: 12px 20px env(safe-area-inset-bottom, 16px);
-      background: var(--cream); border-top: 1px solid var(--border);
-      z-index: 200;
+      position:fixed; bottom:0; left:0; right:0;
+      max-width:480px; margin:0 auto;
+      display:flex; gap:10px;
+      padding:12px 20px env(safe-area-inset-bottom,16px);
+      background:var(--cream); border-top:1px solid var(--border);
+      z-index:200;
     }
     .btn-back {
-      flex: 0 0 52px; padding: 14px;
-      border-radius: 12px; border: 1.5px solid var(--border);
-      background: #fff; color: var(--dark); font-size: 18px;
-      cursor: pointer; transition: background 0.15s;
+      flex:0 0 52px; padding:14px; border-radius:12px;
+      border:1.5px solid var(--border); background:#fff;
+      color:var(--dark); font-size:18px; cursor:pointer;
     }
-    .btn-back:hover { background: var(--border); }
+    .btn-back:hover { background:var(--border); }
     .btn-next {
-      flex: 1; padding: 15px;
-      border-radius: 12px; border: none;
-      background: var(--rose); color: #fff;
-      font-size: 16px; font-weight: 700;
-      cursor: pointer; transition: background 0.15s;
+      flex:1; padding:15px; border-radius:12px; border:none;
+      background:var(--rose); color:#fff;
+      font-size:16px; font-weight:700; cursor:pointer;
+      font-family:'Noto Sans KR',sans-serif; transition:background 0.15s;
     }
-    .btn-next:hover { background: var(--rose-dark); }
-    .btn-next:disabled { background: var(--border); color: var(--sub); cursor: not-allowed; }
+    .btn-next:hover { background:var(--rose-dark); }
+    .btn-next:disabled { background:var(--border); color:var(--sub); cursor:not-allowed; }
 
     /* ── 전체화면 오버레이 ── */
-    .fc-overlay {
-      display: none; position: fixed; inset: 0;
-      background: #fff; z-index: 1000;
-      flex-direction: column; overflow-y: auto;
+    .fc {
+      display:none; position:fixed; inset:0;
+      background:#fff; z-index:1000;
+      flex-direction:column; overflow-y:auto;
     }
-    .fc-overlay.open { display: flex; }
-    .fc-head {
-      padding: 16px 20px 12px;
-      border-bottom: 2px solid var(--rose-light);
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; background: #fff; z-index: 10;
+    .fc.open { display:flex; }
+    .fc-hd {
+      position:sticky; top:0; background:#fff;
+      padding:16px 20px; border-bottom:3px solid var(--rose-light);
+      display:flex; align-items:center; justify-content:space-between; z-index:10;
     }
-    .fc-head-left { display: flex; align-items: center; gap: 10px; }
-    .fc-logo {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--rose);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: #fff; font-weight: 700;
-    }
-    .fc-brand {
-      font-family: 'Noto Serif KR', serif;
-      font-size: 16px; font-weight: 600; color: var(--dark);
-    }
+    .fc-hd-left { display:flex; align-items:center; gap:10px; }
+    .fc-brand { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; color:var(--sub); }
     .fc-close {
-      width: 36px; height: 36px; border-radius: 50%;
-      border: none; background: var(--border);
-      font-size: 16px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      width:36px; height:36px; border-radius:50%;
+      border:none; background:var(--border); font-size:16px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
     }
-    .fc-body { padding: 24px 24px 0; flex: 1; }
-    .fc-section { margin-bottom: 22px; }
-    .fc-sec-label {
-      font-size: 11px; font-weight: 700;
-      color: var(--sub); letter-spacing: 0.5px;
-      text-transform: uppercase; margin-bottom: 8px;
+    .fc-body { padding:28px 28px 0; flex:1; }
+    .fc-salon {
+      font-family:'Noto Serif KR',serif;
+      font-size:28px; font-weight:600; color:var(--dark);
+      margin-bottom:6px; line-height:1.3;
     }
-    .fc-sec-val {
-      font-size: 22px; font-weight: 700;
-      color: var(--dark); line-height: 1.4;
-    }
-    .fc-sec-val.sm { font-size: 17px; }
-    .fc-divider {
-      height: 1px; background: var(--border); margin: 4px 0 22px;
-    }
-    .fc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
-    .fc-tag {
-      padding: 5px 12px; border-radius: 20px;
-      font-size: 13px; background: var(--rose-light); color: var(--rose);
-    }
-    .fc-memo {
-      font-size: 16px; line-height: 1.7; color: var(--dark);
-      background: var(--cream); border-radius: 10px;
-      padding: 14px 16px; margin-bottom: 24px;
-    }
+    .fc-salon-sub { font-size:14px; color:var(--sub); margin-bottom:28px; }
+    .fc-divider { height:1px; background:var(--border); margin:0 0 22px; }
+    .fc-sec { margin-bottom:24px; }
+    .fc-sec-lbl { font-size:12px; font-weight:700; color:var(--sub); letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px; }
+    .fc-sec-val { font-size:24px; font-weight:700; color:var(--dark); line-height:1.3; }
+    .fc-sec-val.md { font-size:18px; }
+    .fc-sec-val.note { font-size:17px; font-weight:400; line-height:1.75; color:var(--dark); }
+    .fc-tags { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:28px; }
+    .fc-tag { padding:6px 14px; border-radius:20px; font-size:13px; background:var(--rose-light); color:var(--rose); font-weight:600; }
+    .fc-date { font-size:13px; color:var(--sub); padding-bottom:32px; }
     .fc-actions {
-      display: flex; flex-direction: column; gap: 10px;
-      padding: 0 24px 32px;
+      display:flex; flex-direction:column; gap:10px;
+      padding:0 28px 40px;
     }
     .btn-kakao {
-      width: 100%; padding: 15px; border-radius: 12px;
-      border: none; background: #FEE500; color: #3C1E1E;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: filter 0.15s;
+      width:100%; padding:15px; border-radius:12px; border:none;
+      background:#FEE500; color:#3C1E1E;
+      font-size:15px; font-weight:700; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      font-family:'Noto Sans KR',sans-serif; transition:filter 0.15s;
     }
-    .btn-kakao:hover { filter: brightness(0.95); }
-    .btn-share-native {
-      width: 100%; padding: 15px; border-radius: 12px;
-      border: none; background: var(--rose); color: #fff;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: background 0.15s;
+    .btn-kakao:hover { filter:brightness(0.95); }
+    .btn-share {
+      width:100%; padding:15px; border-radius:12px; border:none;
+      background:var(--rose); color:#fff;
+      font-size:15px; font-weight:700; cursor:pointer;
+      font-family:'Noto Sans KR',sans-serif; transition:background 0.15s;
     }
-    .btn-share-native:hover { background: var(--rose-dark); }
-    .btn-booking-link {
-      width: 100%; padding: 15px; border-radius: 12px;
-      border: 1.5px solid var(--rose); background: #fff;
-      color: var(--rose); font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: all 0.15s;
+    .btn-share:hover { background:var(--rose-dark); }
+    .btn-book2 {
+      width:100%; padding:15px; border-radius:12px;
+      border:1.5px solid var(--rose); background:#fff;
+      color:var(--rose); font-size:15px; font-weight:700;
+      cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s;
     }
-    .btn-booking-link:hover { background: var(--rose-light); }
+    .btn-book2:hover { background:var(--rose-light); }
 
     /* ── 토스트 ── */
     .toast {
-      position: fixed; bottom: 100px; left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      background: rgba(0,0,0,0.72); color: #fff;
-      padding: 10px 20px; border-radius: 20px;
-      font-size: 13px; opacity: 0;
-      transition: all 0.25s; z-index: 2000;
-      pointer-events: none; white-space: nowrap;
+      position:fixed; bottom:100px; left:50%;
+      transform:translateX(-50%) translateY(10px);
+      background:rgba(0,0,0,.72); color:#fff;
+      padding:10px 20px; border-radius:20px; font-size:13px;
+      opacity:0; transition:all .25s; z-index:2000;
+      pointer-events:none; white-space:nowrap;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
 <!-- ── 네비게이션 ── -->
-<nav class="nav">
-  <a href="index.html" class="nav-logo">헤어이어</a>
-  <div class="nav-links">
-    <a href="search.html">미용실 찾기</a>
-    <a href="booking.html">빈자리 보기</a>
-    <a href="style.html" class="active">스타일카드</a>
-    <a href="for-salon.html" class="btn-outline-sm">사장님이신가요?</a>
-  </div>
-</nav>
+<header>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">헤어<span>이어</span></a>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="search.html">미용실 찾기</a></li>
+        <li><a href="booking.html">빈자리 보기</a></li>
+        <li><a href="style.html" class="active">스타일카드</a></li>
+        <li><a href="for-salon.html" class="nav-salon">사장님이신가요?</a></li>
+      </ul>
+      <button class="nav-hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+</header>
 
 <div class="wz">
 
-  <!-- 진행 바 -->
+  <!-- 진행 표시 -->
   <div class="prog">
-    <div class="prog-steps">
-      <div class="prog-dot done" id="pd1"></div>
-      <div class="prog-dot" id="pd2"></div>
-      <div class="prog-dot" id="pd3"></div>
+    <div class="prog-dots">
+      <div class="prog-dot on" id="pd1"></div>
+      <div class="prog-dot"    id="pd2"></div>
+      <div class="prog-dot"    id="pd3"></div>
     </div>
-    <div class="prog-label" id="progLabel"><strong>1/3</strong> 스타일 고르기</div>
+    <div class="prog-lbl" id="progLbl"><strong>1/3</strong> 성별 선택</div>
   </div>
 
-  <!-- ══ STEP 1 — 사진 + 스타일 키워드 ══ -->
-  <div class="step active" id="step1">
+  <!-- ══ STEP 1 — 성별 + 사진 ══ -->
+  <div class="step on" id="step1">
     <p class="step-title">어떤 스타일을 원하세요?</p>
-    <p class="step-hint">사진은 선택 · 키워드는 하나 이상 골라주세요</p>
+    <p class="step-hint">성별을 선택하면 딱 맞는 키워드를 보여드려요</p>
 
-    <!-- 사진 -->
+    <!-- 미용실 배지 (URL param 있을 때 표시) -->
+    <div class="salon-chip" id="salonChip" style="display:none">
+      <span>💈</span>
+      <span class="salon-chip-name" id="salonChipName"></span>
+      <span style="font-size:12px;color:var(--sub)">에서 사용할 카드예요</span>
+    </div>
+
+    <!-- 성별 선택 -->
+    <div class="gender-grid">
+      <button class="gender-btn" id="gF" onclick="setGender('여성')">
+        <span class="gender-em">👩</span>
+        <span class="gender-lbl">여성</span>
+      </button>
+      <button class="gender-btn" id="gM" onclick="setGender('남성')">
+        <span class="gender-em">👨</span>
+        <span class="gender-lbl">남성</span>
+      </button>
+      <button class="gender-btn" id="gA" onclick="setGender('상관없음')">
+        <span class="gender-em">✨</span>
+        <span class="gender-lbl">상관없음</span>
+      </button>
+    </div>
+
+    <!-- 참고 사진 (선택) -->
+    <div class="slbl">참고 사진 (선택 · 최대 4장)</div>
     <div class="photo-row" id="photoRow">
-      <div class="photo-slot add" onclick="triggerPhoto()" id="addSlot">
-        <div class="add-icon">📷</div>
-        <div class="add-lbl">사진 추가</div>
+      <div class="pslot" id="addSlot" onclick="addPhoto()">
+        <div style="font-size:20px;color:var(--sub)">📷</div>
+        <div style="font-size:10px;color:var(--sub);margin-top:3px">추가</div>
       </div>
     </div>
     <input type="file" id="photoInput" accept="image/*" multiple />
+  </div>
 
-    <!-- 스타일 키워드 -->
-    <div class="sec-lbl" style="margin-bottom:10px">스타일 키워드 (1개 이상)</div>
+  <!-- ══ STEP 2 — 키워드 + 색상 ══ -->
+  <div class="step" id="step2">
+    <p class="step-title">원하는 느낌을 골라주세요</p>
+    <p class="step-hint">여러 개 선택해도 돼요</p>
+
     <div class="kw-grid" id="kwGrid"></div>
 
-    <!-- 색상 -->
-    <div class="sec-lbl">색상 (선택)</div>
+    <div class="slbl">색상 (선택)</div>
     <div class="color-row" id="colorRow"></div>
   </div>
 
-  <!-- ══ STEP 2 — 길이 + 소통 방식 ══ -->
-  <div class="step" id="step2">
-    <p class="step-title">길이와 소통 방식을 알려주세요</p>
-    <p class="step-hint">기본값이 설정되어 있어요. 필요하면 바꿔주세요</p>
-
-    <div class="sec-lbl">원하는 길이</div>
-    <div class="len-wrap">
-      <div class="len-track">
-        <div class="len-fill" id="lenFill"></div>
-      </div>
-      <div class="len-ticks" id="lenTicks"></div>
-    </div>
-
-    <div class="sec-lbl" style="margin-bottom:14px">소통 방식 🤫</div>
-
-    <div class="shy-block">
-      <div class="shy-block-title">말 걸어주세요</div>
-      <div class="shy-opts" id="talkOpts">
-        <div class="shy-opt sel" data-g="talk" data-v="괜찮아요">괜찮아요 😊</div>
-        <div class="shy-opt"     data-g="talk" data-v="조용히 해주세요">조용히 해주세요 🤫</div>
-      </div>
-    </div>
-
-    <div class="shy-block">
-      <div class="shy-block-title">중간 확인</div>
-      <div class="shy-opts" id="checkOpts">
-        <div class="shy-opt sel" data-g="check" data-v="중간에 보여주세요">중간에 보여주세요 🪞</div>
-        <div class="shy-opt"     data-g="check" data-v="마지막에 보여주세요">마지막에 보여주세요</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ STEP 3 — 전달카드 ══ -->
+  <!-- ══ STEP 3 — 자유 입력 + 카드 미리보기 ══ -->
   <div class="step" id="step3">
-    <p class="step-title">전달카드 완성!</p>
-    <p class="step-hint">디자이너에게 보여주거나 카카오톡으로 공유하세요</p>
+    <p class="step-title">원하는 길이나 요청사항</p>
+    <p class="step-hint">자유롭게 적어주세요 — 아래에 카드 미리보기가 바로 업데이트돼요</p>
 
-    <div class="card-preview" id="cardPreview">
-      <!-- JS로 채워짐 -->
-    </div>
+    <textarea class="free-textarea" id="freeText"
+      placeholder="예) 쇄골 아래 5cm 정도로 잘라주세요. 앞머리는 손대지 말아주세요. 층은 많이 주지 않아도 돼요."
+      oninput="refreshCard()"></textarea>
 
-    <textarea class="memo-input" id="memoArea" placeholder="추가로 전달할 내용이 있으면 적어주세요 (선택)" oninput="refreshCard()"></textarea>
+    <!-- 카드 미리보기 -->
+    <div class="card-wrap" id="cardWrap"></div>
 
-    <button class="btn-next" style="position:static;width:100%;margin-bottom:10px;font-size:16px" onclick="openFullcard()">
-      ✂ 디자이너에게 보여주기
-    </button>
-    <button class="btn-booking-link" onclick="location.href='booking.html'">
-      지금 예약하러 가기 →
-    </button>
+    <button class="btn-show" onclick="openFc()">✂ 디자이너에게 보여주기</button>
+    <button class="btn-book" onclick="goBook()">지금 예약하러 가기 →</button>
   </div>
 
 </div><!-- /wz -->
 
-<!-- 하단 버튼 -->
+<!-- 하단 네비 -->
 <div class="nav-btns" id="navBtns">
-  <button class="btn-back" id="btnBack" onclick="prev()">←</button>
-  <button class="btn-next" id="btnNext" onclick="next()">다음</button>
+  <button class="btn-back" id="btnBack" onclick="prevStep()">←</button>
+  <button class="btn-next" id="btnNext" onclick="nextStep()">다음</button>
 </div>
 
 <!-- ── 전체화면 오버레이 ── -->
-<div class="fc-overlay" id="fcOverlay">
-  <div class="fc-head">
-    <div class="fc-head-left">
-      <div class="fc-logo">헤</div>
-      <div class="fc-brand">헤어이어 스타일카드</div>
+<div class="fc" id="fcEl">
+  <div class="fc-hd">
+    <div class="fc-hd-left">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:700">헤</div>
+      <span class="fc-brand">헤어이어 스타일카드</span>
     </div>
-    <button class="fc-close" onclick="closeFullcard()">✕</button>
+    <button class="fc-close" onclick="closeFc()">✕</button>
   </div>
 
-  <div class="fc-body" id="fcBody">
-    <!-- JS로 채워짐 -->
-  </div>
+  <div class="fc-body" id="fcBody"></div>
 
   <div class="fc-actions">
-    <button class="btn-kakao" id="btnKakao" onclick="shareKakao()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.744 1.607 5.15 4 6.594V21l3.5-2.188C10.29 18.928 11.137 19 12 19c5.523 0 10-3.477 10-8S17.523 3 12 3z" fill="#3C1E1E"/>
-      </svg>
+    <button class="btn-kakao" onclick="shareKakao()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.744 1.607 5.15 4 6.594V21l3.5-2.188C10.29 18.928 11.137 19 12 19c5.523 0 10-3.477 10-8S17.523 3 12 3z" fill="#3C1E1E"/></svg>
       카카오톡으로 공유
     </button>
-    <button class="btn-share-native" id="btnShare" onclick="shareNative()">링크/텍스트 공유</button>
-    <button class="btn-booking-link" onclick="location.href='booking.html'">예약하러 가기 →</button>
+    <button class="btn-share" onclick="shareNative()">링크 / 텍스트 공유</button>
+    <button class="btn-book2" onclick="goBook()">예약하러 가기 →</button>
   </div>
 </div>
 
@@ -523,336 +406,284 @@
 
 <script>
 /* ══════════════════════════════════════════
-   스타일카드 — 3단계 위자드
+   스타일카드 — 성별 기반 3단계 위자드
 ══════════════════════════════════════════ */
 
-/* ── 상태 ── */
-const S = {
-  photos:  [],        // DataURL 배열
-  styles:  [],        // 선택된 키워드
-  color:   null,      // 선택된 색상 (null or string)
-  length:  3,         // 0~5
-  talk:    '괜찮아요',
-  check:   '중간에 보여주세요',
-  memo:    '',
-};
+/* ── URL 파라미터 ── */
+const params   = new URLSearchParams(location.search);
+const SALON_NAME = params.get('salon') || '';
+const BOOKING_URL = SALON_NAME
+  ? `booking.html?salon=${encodeURIComponent(SALON_NAME)}`
+  : 'booking.html';
 
-let step = 1;
-const TOTAL = 3;
+/* ── 상태 ── */
+const S = { gender: null, photos: [], styles: [], color: null };
+let curStep = 1;
 
 /* ── 데이터 ── */
-const KEYWORDS = [
-  { em:'🌿', nm:'자연스럽게' },
-  { em:'✂️', nm:'가볍게·숱정리' },
-  { em:'🌸', nm:'여성스럽게' },
-  { em:'🖤', nm:'시크하게' },
-  { em:'🔥', nm:'확 바꾸고 싶어요' },
-  { em:'💫', nm:'볼륨감있게' },
-];
+const KW = {
+  여성: [
+    { em:'🌿', nm:'자연스럽게' },
+    { em:'🌊', nm:'레이어드' },
+    { em:'💫', nm:'볼륨펌' },
+    { em:'✨', nm:'하이라이트' },
+    { em:'🖤', nm:'시크하게' },
+    { em:'🌸', nm:'여성스럽게' },
+  ],
+  남성: [
+    { em:'✂️', nm:'투블럭' },
+    { em:'🍃', nm:'리프컷' },
+    { em:'🔥', nm:'텍스처컷' },
+    { em:'🌿', nm:'자연스럽게' },
+    { em:'💼', nm:'깔끔하게' },
+    { em:'🌊', nm:'흐르는 느낌' },
+  ],
+  상관없음: [
+    { em:'🌿', nm:'자연스럽게' },
+    { em:'✂️', nm:'가볍게·숱정리' },
+    { em:'🔥', nm:'확 바꾸고 싶어요' },
+    { em:'🖤', nm:'시크하게' },
+    { em:'💫', nm:'볼륨감있게' },
+    { em:'💼', nm:'깔끔하게' },
+  ],
+};
 
 const COLORS = ['블랙','다크브라운','브라운','애쉬','골든','핑크','유지(현재색)'];
 
-const LENGTHS = [
-  { nm:'귀 위',  pct:0 },
-  { nm:'귀 선',  pct:20 },
-  { nm:'턱 선',  pct:40 },
-  { nm:'쇄 골',  pct:60 },
-  { nm:'가 슴',  pct:80 },
-  { nm:'허 리',  pct:100 },
-];
-
-/* ── Kakao SDK ── */
-try { Kakao.init('e4e580287e144cfed4c34509ce1858d9'); } catch(e) {}
-
-/* ── 초기화 ── */
+/* ── 초기 렌더 ── */
 (function init() {
-  buildKwGrid();
-  buildColorRow();
-  buildLenTicks();
-  initShyOpts();
-  updateProg();
-  document.getElementById('btnBack').style.visibility = 'hidden';
+  // 미용실 배지
+  if (SALON_NAME) {
+    document.getElementById('salonChip').style.display = 'inline-flex';
+    document.getElementById('salonChipName').textContent = SALON_NAME;
+  }
+  // 색상 칩 빌드
+  const cr = document.getElementById('colorRow');
+  COLORS.forEach(col => {
+    const c = document.createElement('div');
+    c.className = 'c-chip'; c.textContent = col;
+    c.onclick = () => {
+      S.color = S.color === col ? null : col;
+      document.querySelectorAll('.c-chip').forEach(x => x.classList.remove('sel'));
+      if (S.color) c.classList.add('sel');
+    };
+    cr.appendChild(c);
+  });
+  updateNav();
 })();
+
+/* ── 성별 선택 ── */
+function setGender(g) {
+  S.gender = g;
+  S.styles = [];
+  ['gF','gM','gA'].forEach(id => document.getElementById(id).classList.remove('sel'));
+  document.getElementById(g === '여성' ? 'gF' : g === '남성' ? 'gM' : 'gA').classList.add('sel');
+  updateNextBtn();
+}
 
 /* ── 키워드 그리드 ── */
 function buildKwGrid() {
   const g = document.getElementById('kwGrid');
-  KEYWORDS.forEach(kw => {
+  g.innerHTML = '';
+  const list = KW[S.gender] || KW['상관없음'];
+  list.forEach(kw => {
     const c = document.createElement('div');
     c.className = 'kw-card';
     c.innerHTML = `<div class="em">${kw.em}</div><div class="nm">${kw.nm}</div>`;
-    c.addEventListener('click', () => {
+    c.onclick = () => {
       const i = S.styles.indexOf(kw.nm);
       i === -1 ? S.styles.push(kw.nm) : S.styles.splice(i, 1);
       c.classList.toggle('sel', S.styles.includes(kw.nm));
-      updateNextBtn();
-    });
+    };
     g.appendChild(c);
   });
 }
 
-/* ── 색상 칩 ── */
-function buildColorRow() {
-  const r = document.getElementById('colorRow');
-  COLORS.forEach(col => {
-    const c = document.createElement('div');
-    c.className = 'color-chip';
-    c.textContent = col;
-    c.addEventListener('click', () => {
-      if (S.color === col) {
-        S.color = null;
-        c.classList.remove('sel');
-      } else {
-        S.color = col;
-        document.querySelectorAll('.color-chip').forEach(x => x.classList.remove('sel'));
-        c.classList.add('sel');
-      }
-    });
-    r.appendChild(c);
-  });
-}
-
-/* ── 길이 바 ── */
-function buildLenTicks() {
-  const wrap = document.getElementById('lenTicks');
-  LENGTHS.forEach((l, i) => {
-    const t = document.createElement('div');
-    t.className = 'len-tick' + (i === S.length ? ' sel' : '');
-    t.innerHTML = `<div class="dot"></div><div class="lbl">${l.nm}</div>`;
-    t.addEventListener('click', () => {
-      S.length = i;
-      document.querySelectorAll('.len-tick').forEach((el, j) =>
-        el.classList.toggle('sel', j === i));
-      document.getElementById('lenFill').style.width = LENGTHS[i].pct + '%';
-    });
-    wrap.appendChild(t);
-  });
-  document.getElementById('lenFill').style.width = LENGTHS[S.length].pct + '%';
-}
-
-/* ── 소통 �션 ── */
-function initShyOpts() {
-  document.querySelectorAll('.shy-opt').forEach(o => {
-    o.addEventListener('click', () => {
-      const g = o.dataset.g, v = o.dataset.v;
-      S[g] = v;
-      document.querySelectorAll(`.shy-opt[data-g="${g}"]`).forEach(x =>
-        x.classList.toggle('sel', x.dataset.v === v));
-    });
-  });
-}
-
 /* ── 사진 ── */
-function triggerPhoto() {
-  if (S.photos.length >= 4) return showToast('사진은 최대 4장까지 추가할 수 있어요');
+function addPhoto() {
+  if (S.photos.length >= 4) return toast('사진은 최대 4장까지 추가할 수 있어요');
   document.getElementById('photoInput').click();
 }
-
 document.getElementById('photoInput').addEventListener('change', function(e) {
-  const remaining = 4 - S.photos.length;
-  Array.from(e.target.files).slice(0, remaining).forEach(f => {
+  Array.from(e.target.files).slice(0, 4 - S.photos.length).forEach(f => {
     const r = new FileReader();
     r.onload = ev => { S.photos.push(ev.target.result); renderPhotos(); };
     r.readAsDataURL(f);
   });
   this.value = '';
 });
-
 function renderPhotos() {
   const row = document.getElementById('photoRow');
   row.innerHTML = '';
   S.photos.forEach((url, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'photo-slot';
-    slot.innerHTML = `<img src="${url}" /><button class="rm" onclick="rmPhoto(${i})">✕</button>`;
-    row.appendChild(slot);
+    const d = document.createElement('div'); d.className = 'pslot';
+    d.innerHTML = `<img src="${url}"><button class="rm" onclick="rmPhoto(${i})">✕</button>`;
+    row.appendChild(d);
   });
   if (S.photos.length < 4) {
-    const add = document.createElement('div');
-    add.className = 'photo-slot add';
-    add.id = 'addSlot';
-    add.innerHTML = '<div class="add-icon">📷</div><div class="add-lbl">사진 추가</div>';
-    add.onclick = triggerPhoto;
-    row.appendChild(add);
+    const a = document.createElement('div'); a.className = 'pslot'; a.id = 'addSlot';
+    a.innerHTML = '<div style="font-size:20px;color:var(--sub)">📷</div><div style="font-size:10px;color:var(--sub);margin-top:3px">추가</div>';
+    a.onclick = addPhoto; row.appendChild(a);
   }
 }
-
 function rmPhoto(i) { S.photos.splice(i, 1); renderPhotos(); }
 
-/* ── 카드 생성 ── */
+/* ── 카드 빌드 ── */
 function today() {
   const d = new Date();
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 }
-
 function buildCardHTML() {
-  const lenName = LENGTHS[S.length].nm.replace(/\s/g,'');
-  const memo = document.getElementById('memoArea')?.value.trim() || S.memo;
-
-  let rows = '';
-  rows += row('스타일', S.styles.join(' · ') || '미선택', true);
-  rows += row('길이',   lenName);
-  if (S.color) rows += row('색상', S.color);
-  rows += row('소통', `${S.talk} / ${S.check}`);
-
-  const tags = [lenName, ...S.styles, ...(S.color ? [S.color] : [])];
+  const note = document.getElementById('freeText')?.value.trim() || '';
+  const salonDisplay = SALON_NAME || '미용실';
+  const tags = [...S.styles, ...(S.color ? [S.color] : [])];
   const tagsHTML = tags.map(t => `<span class="ctag">#${t}</span>`).join('');
-
-  const memoHTML = memo
-    ? `<div class="card-memo">💬 ${memo}</div>` : '';
-
   return `
-    <div class="card-header">
-      <div class="card-logo">헤</div>
-      <div class="card-brand">헤어이어 스타일카드</div>
-      <div class="card-date">${today()}</div>
+    <div class="card-top">
+      <div class="card-top-icon">💈</div>
+      <div class="card-top-text">
+        <div class="card-salon-name">${esc(salonDisplay)}</div>
+        <div class="card-brand">헤어이어 스타일카드 · ${today()}</div>
+      </div>
     </div>
-    ${rows}
-    <div class="card-tags">${tagsHTML}</div>
-    ${memoHTML}`;
+    <div class="card-body">
+      <div class="card-row"><span class="ckey">성별</span><span class="cval">${S.gender || '미선택'}</span></div>
+      <div class="card-row"><span class="ckey">스타일</span><span class="cval">${S.styles.join(' · ') || '미선택'}</span></div>
+      ${S.color ? `<div class="card-row"><span class="ckey">색상</span><span class="cval">${S.color}</span></div>` : ''}
+      ${note ? `<div class="card-row"><span class="ckey">요청</span><span class="cval note">${esc(note)}</span></div>` : ''}
+    </div>
+    ${tagsHTML ? `<div class="card-tags">${tagsHTML}</div>` : ''}`;
 }
-
-function row(key, val, large) {
-  return `<div class="card-row">
-    <span class="card-key">${key}</span>
-    <span class="card-val${large?' large':''}">${val}</span>
-  </div>`;
-}
-
 function refreshCard() {
-  document.getElementById('cardPreview').innerHTML = buildCardHTML();
+  document.getElementById('cardWrap').innerHTML = buildCardHTML();
 }
 
 /* ── 전체화면 ── */
-function buildFcBody() {
-  const lenName = LENGTHS[S.length].nm.replace(/\s/g,'');
-  const memo = document.getElementById('memoArea')?.value.trim() || S.memo;
-
-  const tags = [lenName, ...S.styles, ...(S.color ? [S.color] : [])];
-
+function buildFcHTML() {
+  const note = document.getElementById('freeText')?.value.trim() || '';
+  const salonDisplay = SALON_NAME || '';
+  const tags = [...S.styles, ...(S.color ? [S.color] : [])];
   return `
-    <div class="fc-section">
-      <div class="fc-sec-label">스타일</div>
-      <div class="fc-sec-val">${S.styles.join(' · ') || '미선택'}</div>
-    </div>
+    ${salonDisplay ? `<div class="fc-salon">${esc(salonDisplay)}</div>` : ''}
+    <div class="fc-salon-sub">${salonDisplay ? '에서 사용할 스타일카드예요' : '헤어이어 스타일카드'}</div>
     <div class="fc-divider"></div>
-    <div class="fc-section">
-      <div class="fc-sec-label">길이</div>
-      <div class="fc-sec-val">${lenName}</div>
+    ${S.gender ? `
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">성별</div>
+      <div class="fc-sec-val">${S.gender}</div>
     </div>
+    <div class="fc-divider"></div>` : ''}
+    ${S.styles.length ? `
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">원하는 스타일</div>
+      <div class="fc-sec-val">${S.styles.join(' · ')}</div>
+    </div>
+    <div class="fc-divider"></div>` : ''}
     ${S.color ? `
-    <div class="fc-divider"></div>
-    <div class="fc-section">
-      <div class="fc-sec-label">색상</div>
-      <div class="fc-sec-val">${S.color}</div>
-    </div>` : ''}
-    <div class="fc-divider"></div>
-    <div class="fc-section">
-      <div class="fc-sec-label">소통 방식</div>
-      <div class="fc-sec-val sm">${S.talk}<br>${S.check}</div>
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">색상</div>
+      <div class="fc-sec-val md">${S.color}</div>
     </div>
-    <div class="fc-tags">${tags.map(t=>`<span class="fc-tag">#${t}</span>`).join('')}</div>
-    ${memo ? `<div class="fc-memo">💬 ${memo}</div>` : ''}`;
+    <div class="fc-divider"></div>` : ''}
+    ${note ? `
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">요청사항</div>
+      <div class="fc-sec-val note">${esc(note)}</div>
+    </div>
+    <div class="fc-divider"></div>` : ''}
+    ${tags.length ? `<div class="fc-tags">${tags.map(t=>`<span class="fc-tag">#${t}</span>`).join('')}</div>` : ''}
+    <div class="fc-date">${today()}</div>`;
 }
-
-function buildShareText() {
-  const lenName = LENGTHS[S.length].nm.replace(/\s/g,'');
-  const memo = document.getElementById('memoArea')?.value.trim() || S.memo;
-  const lines = ['✂ 헤어이어 스타일카드', ''];
-  if (S.styles.length) lines.push(`스타일: ${S.styles.join(', ')}`);
-  lines.push(`길이: ${lenName}`);
-  if (S.color) lines.push(`색상: ${S.color}`);
-  lines.push(`소통: ${S.talk} / ${S.check}`);
-  if (memo) { lines.push(''); lines.push(`메모: ${memo}`); }
-  return lines.join('\n');
-}
-
-function openFullcard() {
-  S.memo = document.getElementById('memoArea').value.trim();
-  document.getElementById('fcBody').innerHTML = buildFcBody();
-  document.getElementById('fcOverlay').classList.add('open');
+function openFc() {
+  document.getElementById('fcBody').innerHTML = buildFcHTML();
+  document.getElementById('fcEl').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
-function closeFullcard() {
-  document.getElementById('fcOverlay').classList.remove('open');
+function closeFc() {
+  document.getElementById('fcEl').classList.remove('open');
   document.body.style.overflow = '';
 }
 
 /* ── 공유 ── */
-function shareKakao() {
-  if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
-    return shareNative();
-  }
-  const text = buildShareText();
-  Kakao.Share.sendDefault({
-    objectType: 'text',
-    text,
-    link: { mobileWebUrl: location.href, webUrl: location.href },
-  });
+function buildShareText() {
+  const note = document.getElementById('freeText')?.value.trim() || '';
+  const salonDisplay = SALON_NAME || '';
+  const lines = ['✂ 헤어이어 스타일카드', ''];
+  if (salonDisplay) lines.push(`미용실: ${salonDisplay}`);
+  if (S.gender) lines.push(`성별: ${S.gender}`);
+  if (S.styles.length) lines.push(`스타일: ${S.styles.join(', ')}`);
+  if (S.color) lines.push(`색상: ${S.color}`);
+  if (note) { lines.push(''); lines.push(`요청: ${note}`); }
+  return lines.join('\n');
 }
-
+function shareKakao() {
+  try {
+    if (!Kakao.isInitialized()) Kakao.init('e4e580287e144cfed4c34509ce1858d9');
+    Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: buildShareText(),
+      link: { mobileWebUrl: location.href, webUrl: location.href },
+    });
+  } catch(e) { shareNative(); }
+}
 function shareNative() {
   const text = buildShareText();
   if (navigator.share) {
-    navigator.share({ title: '헤어이어 스타일카드', text }).catch(() => {});
+    navigator.share({ title: '헤어이어 스타일카드', text }).catch(()=>{});
   } else {
     navigator.clipboard.writeText(text)
-      .then(() => showToast('카드 내용이 복사됐어요! 붙여넣기 하세요 📋'));
+      .then(() => toast('카드 내용이 복사됐어요! 📋'));
   }
 }
 
 /* ── 네비게이션 ── */
-function next() {
-  if (step === 1 && S.styles.length === 0) {
-    return showToast('스타일 키워드를 하나 이상 선택해주세요');
-  }
-  if (step < TOTAL) goTo(step + 1);
+function nextStep() {
+  if (curStep === 1 && !S.gender) return toast('성별을 먼저 선택해주세요');
+  if (curStep < 3) goTo(curStep + 1);
 }
-
-function prev() {
-  if (step > 1) goTo(step - 1);
+function prevStep() {
+  if (curStep > 1) goTo(curStep - 1);
   else history.back();
 }
-
 function goTo(n) {
-  document.getElementById('step' + step).classList.remove('active');
-  step = n;
-  document.getElementById('step' + step).classList.add('active');
-  updateProg();
+  document.getElementById('step' + curStep).classList.remove('on');
+  curStep = n;
+  document.getElementById('step' + curStep).classList.add('on');
+  if (n === 2) buildKwGrid();
+  if (n === 3) refreshCard();
+  updateNav();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  if (step === TOTAL) {
-    refreshCard();
-    document.getElementById('navBtns').style.display = 'none';
-  } else {
-    document.getElementById('navBtns').style.display = 'flex';
-  }
 }
-
-function updateProg() {
-  [1,2,3].forEach(i => {
-    document.getElementById('pd'+i).classList.toggle('done', i <= step);
-  });
-  const labels = ['스타일 고르기','길이 & 소통','전달카드 확인'];
-  document.getElementById('progLabel').innerHTML =
-    `<strong>${step}/3</strong> ${labels[step-1]}`;
-  document.getElementById('btnBack').style.visibility = step === 1 ? 'hidden' : 'visible';
-  document.getElementById('btnNext').textContent =
-    step === 2 ? '완성하기 ✨' : '다음';
+function updateNav() {
+  [1,2,3].forEach(i => document.getElementById('pd'+i).classList.toggle('on', i <= curStep));
+  const lbls = ['성별 선택','스타일 키워드','요청사항 & 카드'];
+  document.getElementById('progLbl').innerHTML = `<strong>${curStep}/3</strong> ${lbls[curStep-1]}`;
+  document.getElementById('btnBack').style.visibility = curStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('btnNext').textContent = curStep === 2 ? '완성하기 ✨' : '다음';
+  document.getElementById('navBtns').style.display = curStep === 3 ? 'none' : 'flex';
 }
-
 function updateNextBtn() {
-  document.getElementById('btnNext').disabled = (step === 1 && S.styles.length === 0);
+  document.getElementById('btnNext').disabled = (curStep === 1 && !S.gender);
 }
 
-/* ── 토스트 ── */
-function showToast(msg) {
+function goBook() { location.href = BOOKING_URL; }
+
+/* ── 유틸 ── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+/* ── 햄버거 ── */
+const ham = document.getElementById('hamburger'), nm = document.getElementById('navMenu');
+ham.addEventListener('click', () => nm.classList.toggle('open'));
+nm.querySelectorAll('a').forEach(l => l.addEventListener('click', () => nm.classList.remove('open')));
 </script>
+
+<script src="login-modal.js"></script>
 </body>
 </html>

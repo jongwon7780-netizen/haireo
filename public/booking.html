@@ -101,6 +101,18 @@
   <p>© 2026 헤어이어. All rights reserved.</p>
 </footer>
 
+<style>
+.style-card-link {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rose);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.style-card-link:hover { text-decoration: underline; }
+</style>
 <script>
 /* ═══════════════════════════════════════════════
    booking.html — Firestore 실시간 예약 그리드
@@ -168,32 +180,56 @@ function listenSalons() {
   });
 }
 
-/* ── 목업 폴백 ── */
+/* ── 목업 폴백 — 서울 5개 미용실 ── */
 function loadMockSalons() {
-  const BASE_LAT = 37.5665, BASE_LNG = 126.9780;
-  firestoreSalons = [
-    { id:'m1', name:'헤어살롱 블랑',     lat:BASE_LAT+0.002, lng:BASE_LNG+0.003 },
-    { id:'m2', name:'스튜디오 레이어',   lat:BASE_LAT-0.003, lng:BASE_LNG+0.005 },
-    { id:'m3', name:'그린헤어',          lat:BASE_LAT+0.005, lng:BASE_LNG-0.002 },
-    { id:'m4', name:'헤어아뜰리에',      lat:BASE_LAT-0.006, lng:BASE_LNG-0.004 },
-    { id:'m5', name:'살롱드파리',        lat:BASE_LAT+0.009, lng:BASE_LNG+0.007 },
-  ].map(s => ({
-    ...s,
-    businessHours: { start:10, end:21 },
-    slots: { [TODAY]: genMockSlots() }
-  }));
-  render();
-}
-
-function genMockSlots() {
-  const slots = {};
-  for (let h = 10; h < 21; h++) {
-    const key = `${String(h).padStart(2,'0')}:00`;
-    if (h < currentHour) { slots[key] = 'booked'; continue; }
-    const r = Math.random();
-    slots[key] = r < 0.5 ? 'open' : r < 0.75 ? 'open' : 'booked';
+  function makeSlots(openHours) {
+    const s = {};
+    for (let h = 9; h <= 21; h++) {
+      const k = `${String(h).padStart(2,'0')}:00`;
+      if (h < 10 || h > 20) { s[k] = 'booked'; continue; }
+      s[k] = (h < currentHour) ? 'booked' : openHours.includes(h) ? 'open' : 'booked';
+    }
+    return s;
   }
-  return slots;
+
+  firestoreSalons = [
+    {
+      id:'s1', name:'마포살롱 블랑',
+      address:'서울 마포구 합정동 45-3',
+      lat:37.5490, lng:126.9139,
+      businessHours:{ start:10, end:21 },
+      slots:{ [TODAY]: makeSlots([10,11,14,15,18,19,20]) }
+    },
+    {
+      id:'s2', name:'강남 헤어스튜디오',
+      address:'서울 강남구 역삼동 812-1',
+      lat:37.4979, lng:127.0276,
+      businessHours:{ start:11, end:20 },
+      slots:{ [TODAY]: makeSlots([11,14,15,17,18,19]) }
+    },
+    {
+      id:'s3', name:'홍대 그린헤어',
+      address:'서울 마포구 서교동 332-14',
+      lat:37.5512, lng:126.9207,
+      businessHours:{ start:10, end:21 },
+      slots:{ [TODAY]: makeSlots([10,13,16,17,18,20]) }
+    },
+    {
+      id:'s4', name:'이태원 살롱드무드',
+      address:'서울 용산구 이태원동 130-50',
+      lat:37.5347, lng:126.9942,
+      businessHours:{ start:11, end:21 },
+      slots:{ [TODAY]: makeSlots([12,15,17,19,20]) }
+    },
+    {
+      id:'s5', name:'합정 헤어아뜰리에',
+      address:'서울 마포구 합정동 381-5',
+      lat:37.5496, lng:126.9132,
+      businessHours:{ start:10, end:20 },
+      slots:{ [TODAY]: makeSlots([10,11,14,16,18]) }
+    },
+  ];
+  render();
 }
 
 /* ── 슬롯 상태 → 화면 상태 변환 ── */
@@ -284,6 +320,7 @@ function render() {
       <td class="salon-info">
         <div class="salon-name">${esc(s.name)}</div>
         <div class="salon-dist">${distStr}</div>
+        <a class="style-card-link" href="style.html?salon=${encodeURIComponent(s.name)}">스타일카드 →</a>
       </td>${cells}
     </tr>`;
   }).join('');
@@ -405,5 +442,6 @@ navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => nav
 
 render();
 </script>
+<script src="login-modal.js"></script>
 </body>
 </html>
