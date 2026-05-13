@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -6,233 +6,234 @@
   <title>사장님용 — 헤어이어</title>
   <meta name="description" content="남은 예약 슬롯을 실시간 공개해 공석을 수익으로 바꾸세요." />
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    /* ── 대시보드 ─────────────────────────────── */
-    .salon-dashboard {
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      padding: 32px 0 0;
+    /* ── Auth ─────────────────────────────── */
+    .auth-page {
+      min-height: calc(100vh - 64px);
+      background: var(--cream);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 16px;
     }
-    .dashboard-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .auth-logo {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 22px; font-weight: 700;
+      color: var(--rose); margin-bottom: 6px; text-align: center;
+    }
+    .auth-logo span { color: var(--dark); }
+    .auth-page-label { font-size: 13px; color: var(--sub); margin-bottom: 28px; text-align: center; }
+    .auth-card {
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: 24px; padding: 36px 32px;
+      width: 100%; max-width: 440px;
+    }
+    .auth-title {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 20px; font-weight: 600; color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .auth-sub { font-size: 13px; color: var(--sub); margin-bottom: 24px; }
+    .auth-field { margin-bottom: 12px; }
+    .auth-field label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--dark); margin-bottom: 5px;
+    }
+    .auth-field input,
+    .auth-field select {
+      width: 100%; padding: 13px 16px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-size: 15px; color: var(--dark); outline: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      box-sizing: border-box; transition: border-color 0.2s;
+      background: #fff;
+    }
+    .auth-field input:focus,
+    .auth-field select:focus { border-color: var(--rose); }
+    .auth-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .auth-divider {
+      font-size: 12px; font-weight: 700; color: var(--sub);
+      margin: 20px 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .auth-btn {
+      width: 100%; padding: 15px; border-radius: 12px; border: none;
+      background: var(--rose); color: #fff;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: background 0.15s; margin-top: 6px;
+    }
+    .auth-btn:hover { background: var(--rose-dark); }
+    .auth-err {
+      font-size: 12px; color: #D95C5C;
+      padding: 8px 12px; background: #FEE8E8; border-radius: 8px;
+      margin-bottom: 10px; display: none;
+    }
+    .auth-err.show { display: block; }
+    .auth-footer {
+      text-align: center; margin-top: 18px;
+      font-size: 13px; color: var(--sub);
+    }
+    .auth-footer button {
+      background: none; border: none; color: var(--rose);
+      font-size: 13px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      text-decoration: underline;
+    }
+    .auth-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--sub); cursor: pointer;
+      background: none; border: none;
+      font-family: 'Noto Sans KR', sans-serif;
       margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 12px;
     }
-    .dashboard-top h2 {
-      font-size: 22px;
-      color: var(--dark);
+    .auth-back:hover { color: var(--dark); }
+
+    /* ── Dashboard ─────────────────────────── */
+    .db-header {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 14px 0; position: sticky; top: 0; z-index: 200;
     }
-    .fb-status {
-      font-size: 12px;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-weight: 700;
+    .db-header-inner {
+      max-width: 720px; margin: 0 auto;
+      padding: 0 16px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .fb-status.ok  { background: #E8F5EE; color: #2D8C5E; }
-    .fb-status.err { background: #FEE8E8; color: #C0392B; }
-    .dash-tabs {
-      display: flex;
-      gap: 4px;
-      border-bottom: 2px solid var(--border);
+    .db-salon-name {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 17px; font-weight: 600; color: var(--dark);
     }
-    .dash-tab {
-      padding: 10px 20px;
-      border: none;
-      background: none;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--sub);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      position: relative;
-      transition: color 0.15s;
-    }
-    .dash-tab.active { color: var(--rose); border-bottom-color: var(--rose); }
-    .dash-panel { display: none; padding: 24px 0 32px; }
-    .dash-panel.active { display: block; }
-    .dash-form-row {
-      margin-bottom: 14px;
-    }
-    .dash-form-row label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--sub);
-      margin-bottom: 6px;
-    }
-    .dash-form-row input,
-    .dash-form-row select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      color: var(--dark);
-      background: #fff;
-      outline: none;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
-    }
-    .dash-form-row input:focus,
-    .dash-form-row select:focus { border-color: var(--rose); }
-    .dash-form-2col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .dash-msg {
-      margin-top: 12px;
-      font-size: 13px;
-      padding: 10px 14px;
-      border-radius: 8px;
-    }
-    .dash-msg.success { background: #E8F5EE; color: #2D8C5E; }
-    .dash-msg.error   { background: #FEE8E8; color: #C0392B; }
-    /* 스케줄 그리드 */
-    .schedule-wrap { margin-top: 16px; }
-    .schedule-date {
-      font-size: 13px;
-      color: var(--sub);
-      margin-bottom: 12px;
-    }
-    .slot-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .slot-btn {
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
+    .db-owner-sub { font-size: 12px; color: var(--sub); }
+    .db-logout {
+      padding: 7px 16px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: #fff;
+      color: var(--sub); font-size: 13px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
       transition: all 0.15s;
     }
-    .slot-btn.open    { background: #E8F5EE; color: #2D8C5E; }
-    .slot-btn.open:hover { background: #d0eddd; }
-    .slot-btn.blocked { background: var(--border); color: var(--sub); }
-    .slot-btn.booked  { background: #FEE8E8; color: #C0392B; cursor: not-allowed; }
-    /* 예약 알림 카드 */
-    .booking-card {
-      background: var(--cream);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
+    .db-logout:hover { background: #FEE8E8; color: #D95C5C; border-color: #F5C0BC; }
+    .db-tabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: 53px; z-index: 100;
     }
-    .booking-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 10px;
+    .db-tab {
+      flex: 1; padding: 14px 8px;
+      border: none; background: none;
+      font-size: 14px; font-weight: 600; color: var(--sub);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color 0.15s;
+      font-family: 'Noto Sans KR', sans-serif;
     }
-    .booking-card-name {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--dark);
+    .db-tab.active { color: var(--rose); border-bottom-color: var(--rose); }
+    .db-wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
+    .db-panel { display: none; padding: 24px 0; }
+    .db-panel.active { display: block; }
+    .db-sec-label {
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      letter-spacing: 0.4px; margin-bottom: 14px;
     }
-    .booking-card-time {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--rose);
-    }
-    .booking-card-info {
-      font-size: 13px;
-      color: var(--sub);
-      margin-bottom: 12px;
-    }
-    .booking-card-actions {
-      display: flex;
-      gap: 8px;
-    }
-    .btn-confirm {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: var(--green);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-reject {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: var(--red);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      background: var(--red);
-      color: #fff;
-      border-radius: 50%;
-      font-size: 10px;
-      font-weight: 700;
-      margin-left: 4px;
-      vertical-align: middle;
-    }
-    .badge[data-count="0"] { display: none; }
-    .salon-select-row {
-      margin-bottom: 16px;
-    }
-    .salon-select-row label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--sub);
+    .db-empty { text-align: center; padding: 40px 16px; color: var(--sub); font-size: 14px; }
+
+    /* ── 슬롯 버튼 ── */
+    .db-today-label {
+      font-size: 14px; font-weight: 700; color: var(--dark);
       margin-bottom: 6px;
     }
-    .salon-select-row select {
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      color: var(--dark);
-      background: #fff;
-      outline: none;
-      min-width: 240px;
+    .db-today-hint { font-size: 12px; color: var(--sub); margin-bottom: 18px; }
+    .slot-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     }
-    .empty-msg {
-      color: var(--sub);
-      font-size: 14px;
-      text-align: center;
-      padding: 32px 0;
+    .slot-big-btn {
+      padding: 18px 10px; border-radius: 14px;
+      border: 2px solid transparent;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s;
+      font-family: 'Noto Sans KR', sans-serif;
+      text-align: center; line-height: 1;
     }
-    /* 스타일카드 탭 */
+    .slot-status { font-size: 11px; font-weight: 600; margin-top: 5px; }
+    .slot-big-btn.open { background: #E8F5EE; color: #2D8C5E; border-color: #B8DFC9; }
+    .slot-big-btn.open:hover { background: #C8EDDA; }
+    .slot-big-btn.blocked { background: #FEE8E8; color: #C0392B; border-color: #F5C0BC; }
+    .slot-big-btn.blocked:hover { background: #FDD0CC; }
+
+    /* ── 디자이너 관리 ── */
+    .dsgn-add-card {
+      background: var(--cream); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-bottom: 24px;
+    }
+    .dsgn-add-title { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 14px; }
+    .dsgn-field { margin-bottom: 10px; }
+    .dsgn-field label {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--sub); margin-bottom: 4px;
+    }
+    .dsgn-field input {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; color: var(--dark); outline: none;
+      box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif;
+      background: #fff; transition: border-color 0.2s;
+    }
+    .dsgn-field input:focus { border-color: var(--rose); }
+    .dsgn-add-btn {
+      width: 100%; padding: 12px; border-radius: 10px;
+      border: none; background: var(--dark); color: #fff;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin-top: 4px; transition: background 0.15s;
+    }
+    .dsgn-add-btn:hover { background: #111; }
+    .dsgn-err { font-size: 12px; color: #D95C5C; margin-bottom: 8px; display: none; }
+    .dsgn-err.show { display: block; }
+    .dsgn-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 8px;
+    }
+    .dsgn-row-name { font-size: 15px; font-weight: 700; color: var(--dark); }
+    .dsgn-row-id { font-size: 12px; color: var(--sub); margin-top: 2px; }
+    .dsgn-del-btn {
+      padding: 6px 14px; border-radius: 20px;
+      border: 1.5px solid #F5C0BC; background: #FEE8E8;
+      color: #C0392B; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+    }
+    .dsgn-del-btn:hover { background: #FDD0CC; }
+
+    /* ── 스타일카드 ── */
+    .sc-sort-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .sc-sort-label { font-size: 12px; font-weight: 700; color: var(--sub); }
+    .sc-sort-btn {
+      padding: 5px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer; color: var(--dark);
+      font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+    }
+    .sc-sort-btn.active { background: var(--dark); border-color: var(--dark); color: #fff; }
     .sc-card {
-      background: var(--cream); border-radius: 12px;
-      border: 1.5px solid var(--border); padding: 14px 16px;
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 14px 16px;
       margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s;
     }
     .sc-card:hover { border-color: var(--rose); }
-    .sc-card-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .sc-card-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
     .sc-card-name { font-size: 15px; font-weight: 700; color: var(--dark); }
     .sc-card-time { font-size: 12px; font-weight: 700; color: var(--rose); }
     .sc-card-meta { font-size: 12px; color: var(--sub); margin-bottom: 6px; }
     .sc-card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .sc-card-tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: var(--rose-light); color: var(--rose); font-weight: 600; }
-    .sc-designer-chip {
-      padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
-      background: #fff; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--dark);
+    .sc-tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: var(--rose-light); color: var(--rose); font-weight: 600; }
+    .sc-group-label {
+      font-size: 12px; font-weight: 700; color: var(--sub);
+      margin: 20px 0 8px; padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
-    .sc-designer-chip.active { background: var(--dark); border-color: var(--dark); color: #fff; }
+    .sc-group-label:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+
+    /* 상세 오버레이 */
     .sc-detail-overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.5); z-index: 1000;
@@ -259,9 +260,31 @@
     .sc-photos { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 8px; }
     .sc-photo { aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
     .sc-photo img { width: 100%; height: 100%; object-fit: cover; }
-    @media (max-width: 600px) {
-      .dash-form-2col { grid-template-columns: 1fr; }
-      .dash-tab { padding: 10px 14px; font-size: 13px; }
+
+    /* ── Landing Hero 버튼 ── */
+    .landing-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-start-big {
+      padding: 16px 36px; border-radius: 12px; border: none;
+      background: var(--rose); color: #fff;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: background 0.15s;
+    }
+    .btn-start-big:hover { background: var(--rose-dark); }
+    .btn-login-ghost {
+      padding: 16px 28px; border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.5); background: transparent;
+      color: #fff; font-size: 17px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: all 0.15s;
+    }
+    .btn-login-ghost:hover { background: rgba(255,255,255,0.12); }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 28px 20px; }
+      .auth-2col { grid-template-columns: 1fr; gap: 0; }
+      .slot-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .slot-big-btn { padding: 14px 6px; font-size: 15px; }
     }
   </style>
 </head>
@@ -275,728 +298,649 @@
         <li><a href="search.html">미용실 찾기</a></li>
         <li><a href="booking.html">빈자리 보기</a></li>
         <li><a href="style.html">스타일카드</a></li>
-        <li><a href="for-salon.html" class="nav-salon active" style="background:var(--dark);">사장님이신가요?</a></li>
+        <li id="navOwnerLi">
+          <a href="#" class="nav-salon active" style="background:var(--dark);"
+            onclick="event.preventDefault();showLoginView()">사장님이신가요?</a>
+        </li>
       </ul>
       <button class="nav-hamburger" id="hamburger" aria-label="메뉴"><span></span><span></span><span></span></button>
     </div>
   </nav>
 </header>
 
-<!-- ─── 사장님 대시보드 ─── -->
-<section class="salon-dashboard">
-  <div class="container">
-    <div class="dashboard-top">
-      <h2 class="serif">사장님 대시보드</h2>
-      <span class="fb-status err" id="fbStatus">Firebase 연결 중...</span>
-    </div>
-    <div class="dash-tabs">
-      <button class="dash-tab active" onclick="switchTab(0)">내 미용실 등록</button>
-      <button class="dash-tab" onclick="switchTab(1)">스케줄 관리</button>
-      <button class="dash-tab" onclick="switchTab(2)">예약 알림 <span class="badge" id="pendingBadge" data-count="0">0</span></button>
-      <button class="dash-tab" onclick="switchTab(3)">스타일카드</button>
-    </div>
+<!-- ═══════════════════════════════════
+     VIEW: LANDING
+═══════════════════════════════════ -->
+<div id="viewLanding">
 
-    <!-- 탭 0: 등록 -->
-    <div class="dash-panel active" id="dashPanel0">
-      <form id="regForm" onsubmit="registerSalon(event)">
-        <div class="dash-form-row">
-          <label>미용실 이름 *</label>
-          <input type="text" id="regName" placeholder="예: 헤어살롱 블랑" required />
-        </div>
-        <div class="dash-form-row">
-          <label>주소 *</label>
-          <input type="text" id="regAddress" placeholder="서울시 마포구 서교동..." required />
-        </div>
-        <div class="dash-form-row">
-          <label>전화번호 *</label>
-          <input type="tel" id="regPhone" placeholder="02-1234-5678" required />
-        </div>
-        <div class="dash-form-2col">
-          <div class="dash-form-row">
-            <label>위도 (선택 — 지도 표시용)</label>
-            <input type="number" id="regLat" placeholder="37.5665" step="0.000001" />
-          </div>
-          <div class="dash-form-row">
-            <label>경도 (선택 — 지도 표시용)</label>
-            <input type="number" id="regLng" placeholder="126.9780" step="0.000001" />
-          </div>
-        </div>
-        <div class="dash-form-2col">
-          <div class="dash-form-row">
-            <label>영업 시작 시간</label>
-            <select id="regStart">
-              <option value="9">9시</option>
-              <option value="10" selected>10시</option>
-              <option value="11">11시</option>
-              <option value="12">12시</option>
-            </select>
-          </div>
-          <div class="dash-form-row">
-            <label>영업 종료 시간</label>
-            <select id="regEnd">
-              <option value="18">18시</option>
-              <option value="19">19시</option>
-              <option value="20">20시</option>
-              <option value="21" selected>21시</option>
-              <option value="22">22시</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" id="regBtn">Firestore에 등록하기</button>
-      </form>
-      <div id="regMsg" class="dash-msg" style="display:none"></div>
-    </div>
-
-    <!-- 탭 1: 스케줄 관리 -->
-    <div class="dash-panel" id="dashPanel1">
-      <div class="salon-select-row">
-        <label>관리할 미용실</label>
-        <select id="scheduleSalonSel" onchange="loadSchedule()">
-          <option value="">-- 미용실을 선택하세요 --</option>
-        </select>
-      </div>
-      <div id="scheduleWrap">
-        <p class="empty-msg">미용실을 선택하면 오늘 스케줄이 표시됩니다.</p>
+  <section class="salon-hero">
+    <div class="container">
+      <div class="salon-hero-badge">💈 미용실 전용 페이지</div>
+      <h1 class="serif">내 미용실의 빈 자리,<br>이제 <em>수익으로</em> 바꾸세요</h1>
+      <p class="salon-hero-sub">
+        예약 없이 비는 화요일 오후, 퇴근 시간대 공석을<br>
+        헤어이어가 실시간으로 채워드립니다.
+      </p>
+      <div class="landing-cta-btns">
+        <button class="btn-start-big" onclick="showSignupView()">무료로 시작하기</button>
+        <button class="btn-login-ghost" onclick="showLoginView()">이미 계정이 있어요</button>
       </div>
     </div>
+  </section>
 
-    <!-- 탭 2: 예약 알림 -->
-    <div class="dash-panel" id="dashPanel2">
-      <div class="salon-select-row">
-        <label>미용실 선택</label>
-        <select id="alertSalonSel" onchange="loadAlerts()">
-          <option value="">-- 미용실을 선택하세요 --</option>
-        </select>
-      </div>
-      <div id="alertsWrap">
-        <p class="empty-msg">미용실을 선택하면 예약 알림이 표시됩니다.</p>
+  <div class="stat-bar">
+    <div class="stat-bar-inner">
+      <div class="stat-item"><div class="stat-num">1,240+</div><div class="stat-label">등록 미용실</div></div>
+      <div class="stat-item"><div class="stat-num">98%</div><div class="stat-label">공석 채움률</div></div>
+      <div class="stat-item"><div class="stat-num">+22%</div><div class="stat-label">평균 월 매출 증가</div></div>
+      <div class="stat-item"><div class="stat-num">4.9★</div><div class="stat-label">사장님 만족도</div></div>
+    </div>
+  </div>
+
+  <section class="section section-white">
+    <div class="container">
+      <div class="section-label">Benefits</div>
+      <h2 class="section-title serif">헤어이어를 쓰면 달라지는 것</h2>
+      <div class="benefit-grid">
+        <div class="benefit-card"><div class="benefit-icon">⚡</div><h3>공석 자동 채움</h3><p>취소나 당일 여유 슬롯을 자동으로 플랫폼에 공개해 주변 고객이 즉시 예약합니다.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">📵</div><h3>전화 예약 제로</h3><p>고객이 앱에서 직접 예약하므로 전화 응대에 드는 시간을 완전히 줄일 수 있어요.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">🔔</div><h3>노쇼 방지 알림</h3><p>방문 1시간 전 자동 리마인더를 발송해 노쇼율을 평균 82% 낮춰드립니다.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">📊</div><h3>매출 통계 분석</h3><p>요일별, 시간대별 예약 패턴과 매출을 한눈에 확인해 운영을 최적화하세요.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">💬</div><h3>스타일카드 수신</h3><p>고객이 미리 만들어 온 스타일카드를 받아 시술 전 소통 시간을 줄이세요.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">📍</div><h3>검색 노출 부스팅</h3><p>주변 고객이 미용실 찾기를 할 때 헤어이어 등록 미용실이 우선 노출됩니다.</p></div>
       </div>
     </div>
+  </section>
 
-    <!-- 탭 3: 스타일카드 -->
-    <div class="dash-panel" id="dashPanel3">
-      <div class="salon-select-row">
-        <label>미용실 선택</label>
-        <select id="cardSalonSel" onchange="loadStyleCards()">
-          <option value="">-- 미용실을 선택하세요 --</option>
-        </select>
+  <section class="section">
+    <div class="container">
+      <div class="section-label">How it works</div>
+      <h2 class="section-title serif" style="margin-bottom:48px">등록부터 예약까지 3단계</h2>
+      <div class="how-row">
+        <div class="how-row-visual">🖊️<br/>등록 신청서<br/><span style="font-size:16px;color:var(--sub)">5분이면 완료</span></div>
+        <div class="how-row-content">
+          <div class="section-label">Step 1</div>
+          <h2>간편 등록 신청</h2>
+          <p>미용실 이름, 주소, 운영 서비스, 요금제만 선택하면 바로 등록 신청이 완료됩니다. 담당자가 1영업일 내 검토 후 승인해드립니다.</p>
+          <button class="btn btn-primary btn-sm" onclick="showSignupView()">등록 신청하기</button>
+        </div>
       </div>
-      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="cardFilterRow" style="display:none">
-        <span style="font-size:12px;font-weight:700;color:var(--sub)">디자이너</span>
-        <div id="cardDesignerFilter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div class="how-row reverse">
+        <div class="how-row-visual">📅<br/>슬롯 관리<br/><span style="font-size:16px;color:var(--sub)">실시간 반영</span></div>
+        <div class="how-row-content">
+          <div class="section-label">Step 2</div>
+          <h2>예약 슬롯 공개</h2>
+          <p>대시보드에서 오늘의 빈 시간대를 몇 초 만에 공개할 수 있어요. 취소가 생기면 즉시 열어두면 빠르게 채워집니다.</p>
+        </div>
       </div>
-      <div id="styleCardsWrap">
-        <p class="empty-msg">미용실을 선택하면 스타일카드 목록이 표시됩니다.</p>
+      <div class="how-row">
+        <div class="how-row-visual">💰<br/>+22% 매출<br/><span style="font-size:16px;color:var(--sub)">평균 증가</span></div>
+        <div class="how-row-content">
+          <div class="section-label">Step 3</div>
+          <h2>공석이 수익으로</h2>
+          <p>주변 고객이 실시간으로 빈자리를 확인하고 예약합니다. 화요일 오후, 저녁 마지막 타임 같은 비수기 슬롯도 채워보세요.</p>
+        </div>
       </div>
-      <div style="margin-top:16px;text-align:right">
-        <a href="designer.html" style="font-size:13px;color:var(--rose);text-decoration:none">디자이너 포털 바로가기 →</a>
+    </div>
+  </section>
+
+  <section class="section section-white" id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-title serif">합리적인 요금제</h2>
+      <p class="section-desc">공석이 채워질수록 수익이 늘어나는 구조. 처음 30일은 무료입니다.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-name">베이직</div>
+          <div class="pricing-price">29,000<span>원</span></div>
+          <div class="pricing-period">/ 월 · 부가세 별도</div>
+          <hr class="pricing-divider" />
+          <ul class="pricing-features">
+            <li>실시간 예약 슬롯 관리</li><li>예약 고객 문자 알림</li>
+            <li>월 예약 100건</li><li>기본 통계 대시보드</li><li>이메일 고객 지원</li>
+          </ul>
+          <button class="pricing-btn pricing-btn-outline" onclick="showSignupView()">무료로 시작하기</button>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-badge">가장 인기</div>
+          <div class="pricing-name">프로</div>
+          <div class="pricing-price">59,000<span>원</span></div>
+          <div class="pricing-period">/ 월 · 부가세 별도</div>
+          <hr class="pricing-divider" />
+          <ul class="pricing-features">
+            <li>베이직 모든 기능 포함</li><li>무제한 예약 건수</li>
+            <li>카카오 알림톡 발송</li><li>고급 매출 통계 분석</li>
+            <li>고객 재방문 리마인더</li><li>검색 우선 노출 부스팅</li>
+            <li>전화 + 채팅 고객 지원</li>
+          </ul>
+          <button class="pricing-btn pricing-btn-fill" onclick="showSignupView()">지금 시작하기</button>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-name">체인 · 프랜차이즈</div>
+          <div class="pricing-price">문의<span></span></div>
+          <div class="pricing-period">맞춤 견적 제공</div>
+          <hr class="pricing-divider" />
+          <ul class="pricing-features">
+            <li>프로 모든 기능 포함</li><li>멀티 지점 통합 관리</li>
+            <li>브랜드 전용 예약 페이지</li><li>API 연동 지원</li>
+            <li>전담 계정 매니저</li><li>SLA 보장</li>
+          </ul>
+          <button class="pricing-btn pricing-btn-dark" onclick="showSignupView()">도입 문의하기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-label">Reviews</div>
+      <h2 class="section-title serif">사장님들의 실제 후기</h2>
+      <div class="reviews-grid">
+        <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text">"화요일 오후 공석이 늘 고민이었는데, 등록 한 달 만에 거의 꽉 찼어요. 전화 받는 시간도 줄고 너무 편해졌습니다."</p><div class="review-author"><div class="review-avatar">✂️</div><div><div class="review-name">김현정 원장</div><div class="review-salon">헤어살롱 블랑 · 마포구</div></div></div></div>
+        <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text">"저녁 7~9시 슬롯이 매번 비었는데, 헤어이어 덕분에 퇴근 후 손님들이 알아서 예약하고 옵니다. 월 매출 18% 올랐어요."</p><div class="review-author"><div class="review-avatar">💇</div><div><div class="review-name">박민준 원장</div><div class="review-salon">스튜디오 레이어 · 강남구</div></div></div></div>
+        <div class="review-card"><div class="review-stars">★★★★☆</div><p class="review-text">"스타일카드 기능이 진짜 도움돼요. 고객이 미리 카드를 보내주면 상담 시간이 반으로 줄어요. 노쇼도 거의 없어졌고요."</p><div class="review-author"><div class="review-avatar">🌿</div><div><div class="review-name">이소연 원장</div><div class="review-salon">그린헤어 · 서대문구</div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-white">
+    <div class="container" style="max-width:720px">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title serif">자주 묻는 질문</h2>
+      <div class="faq-list">
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">등록 후 바로 서비스를 이용할 수 있나요?<span class="faq-arrow">▾</span></button><div class="faq-a">신청서 제출 후 담당자가 1영업일 내 검토 후 승인합니다. 승인되면 바로 슬롯 관리 대시보드에 접근할 수 있어요.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">계약 기간이 있나요?<span class="faq-arrow">▾</span></button><div class="faq-a">최소 계약 기간이 없습니다. 월 단위로 자유롭게 해지할 수 있으며, 첫 30일은 무료로 이용하실 수 있습니다.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">기존에 쓰던 예약 시스템과 함께 쓸 수 있나요?<span class="faq-arrow">▾</span></button><div class="faq-a">네, 가능합니다. 헤어이어는 기존 예약 시스템과 병행 운영할 수 있도록 설계되었습니다. 프로/체인 요금제에서는 API 연동도 지원합니다.</div></div>
+        <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">수수료가 발생하나요?<span class="faq-arrow">▾</span></button><div class="faq-a">예약 건당 별도 수수료는 없습니다. 월 구독 요금만 납부하시면 예약 건수에 관계없이 (프로 기준) 무제한 사용 가능합니다.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>지금 바로 <em>공석을 수익으로</em> 바꾸세요</h2>
+    <p>처음 30일 무료. 카드 등록 없이 시작할 수 있어요.</p>
+    <div class="cta-actions">
+      <button class="btn btn-primary" onclick="showSignupView()">무료로 등록 신청하기</button>
+      <a href="#pricing" class="btn" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.35)">요금제 다시 보기</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">헤어이어</div>
+    <div class="footer-links">
+      <a href="#">서비스 소개</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">고객센터</a>
+    </div>
+    <p>© 2026 헤어이어. All rights reserved.</p>
+  </footer>
+</div><!-- /viewLanding -->
+
+
+<!-- ═══════════════════════════════════
+     VIEW: SIGNUP
+═══════════════════════════════════ -->
+<div id="viewSignup" style="display:none">
+  <div class="auth-page">
+    <button class="auth-back" onclick="showLandingView()">← 소개 페이지로</button>
+    <div class="auth-logo">헤어<span>이어</span></div>
+    <p class="auth-page-label">사장님 무료 가입 — 처음 30일 무료</p>
+    <div class="auth-card">
+      <p class="auth-title">사장님 정보</p>
+      <p class="auth-sub">가입 후 바로 대시보드를 이용하실 수 있어요</p>
+
+      <div class="auth-field">
+        <label>사장님 이름 *</label>
+        <input type="text" id="suName" placeholder="홍길동" autocomplete="name" />
+      </div>
+      <div class="auth-field">
+        <label>전화번호 (로그인 아이디) *</label>
+        <input type="tel" id="suPhone" placeholder="010-1234-5678" autocomplete="tel" />
+      </div>
+      <div class="auth-2col">
+        <div class="auth-field">
+          <label>비밀번호 * (6자 이상)</label>
+          <input type="password" id="suPw" placeholder="••••••" autocomplete="new-password" />
+        </div>
+        <div class="auth-field">
+          <label>비밀번호 확인 *</label>
+          <input type="password" id="suPw2" placeholder="동일하게 입력" autocomplete="new-password" />
+        </div>
+      </div>
+
+      <div class="auth-divider">미용실 정보</div>
+
+      <div class="auth-field">
+        <label>미용실 이름 *</label>
+        <input type="text" id="suSalonName" placeholder="헤어살롱 블랑" />
+      </div>
+      <div class="auth-field">
+        <label>주소 *</label>
+        <input type="text" id="suAddress" placeholder="서울시 마포구 서교동 123-4" />
+      </div>
+      <div class="auth-field">
+        <label>미용실 전화번호</label>
+        <input type="tel" id="suSalonPhone" placeholder="02-1234-5678" />
+      </div>
+      <div class="auth-field">
+        <label>네이버 플레이스 URL</label>
+        <input type="url" id="suNaverUrl" placeholder="https://naver.me/..." />
+      </div>
+      <div class="auth-2col">
+        <div class="auth-field">
+          <label>영업 시작</label>
+          <select id="suStart">
+            <option value="9">9시</option>
+            <option value="10" selected>10시</option>
+            <option value="11">11시</option>
+            <option value="12">12시</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label>영업 종료</label>
+          <select id="suEnd">
+            <option value="18">18시</option>
+            <option value="19">19시</option>
+            <option value="20">20시</option>
+            <option value="21" selected>21시</option>
+            <option value="22">22시</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="auth-err" id="suErr"></p>
+      <button class="auth-btn" onclick="doSignup()">가입 완료 → 대시보드로 이동</button>
+      <div class="auth-footer">
+        이미 계정이 있으신가요? <button onclick="showLoginView()">로그인하기</button>
       </div>
     </div>
   </div>
-</section>
+</div><!-- /viewSignup -->
 
-<!-- ─── Hero ─── -->
-<section class="salon-hero">
-  <div class="container">
-    <div class="salon-hero-badge">💈 미용실 전용 페이지</div>
-    <h1 class="serif">내 미용실의 빈 자리,<br>이제 <em>수익으로</em> 바꾸세요</h1>
-    <p class="salon-hero-sub">
-      예약 없이 비는 화요일 오후, 퇴근 시간대 공석을<br>
-      헤어이어가 실시간으로 채워드립니다.
-    </p>
-    <div class="salon-hero-actions">
-      <a href="salon-join.html" class="btn btn-primary">지금 무료 등록하기</a>
-      <a href="#pricing" class="btn btn-secondary">요금제 보기</a>
+
+<!-- ═══════════════════════════════════
+     VIEW: LOGIN
+═══════════════════════════════════ -->
+<div id="viewLogin" style="display:none">
+  <div class="auth-page">
+    <button class="auth-back" onclick="showLandingView()">← 소개 페이지로</button>
+    <div class="auth-logo">헤어<span>이어</span></div>
+    <p class="auth-page-label">사장님 전용 로그인</p>
+    <div class="auth-card" style="max-width:400px">
+      <p class="auth-title">사장님 로그인</p>
+      <p class="auth-sub">가입 시 등록한 전화번호와 비밀번호를 입력하세요</p>
+      <div class="auth-field">
+        <label>전화번호</label>
+        <input type="tel" id="liPhone" placeholder="010-1234-5678" autocomplete="username" />
+      </div>
+      <div class="auth-field">
+        <label>비밀번호</label>
+        <input type="password" id="liPw" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <p class="auth-err" id="liErr"></p>
+      <button class="auth-btn" onclick="doLogin()">로그인</button>
+      <div class="auth-footer">
+        아직 계정이 없으신가요? <button onclick="showSignupView()">무료 가입</button>
+      </div>
     </div>
   </div>
-</section>
+</div><!-- /viewLogin -->
 
-<!-- ─── Stats Bar ─── -->
-<div class="stat-bar">
-  <div class="stat-bar-inner">
-    <div class="stat-item"><div class="stat-num">1,240+</div><div class="stat-label">등록 미용실</div></div>
-    <div class="stat-item"><div class="stat-num">98%</div><div class="stat-label">공석 채움률</div></div>
-    <div class="stat-item"><div class="stat-num">+22%</div><div class="stat-label">평균 월 매출 증가</div></div>
-    <div class="stat-item"><div class="stat-num">4.9★</div><div class="stat-label">사장님 만족도</div></div>
+
+<!-- ═══════════════════════════════════
+     VIEW: DASHBOARD
+═══════════════════════════════════ -->
+<div id="viewDashboard" style="display:none">
+
+  <div class="db-header">
+    <div class="db-header-inner">
+      <div>
+        <div class="db-salon-name" id="dbSalonName">내 미용실</div>
+        <div class="db-owner-sub" id="dbOwnerSub"></div>
+      </div>
+      <button class="db-logout" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="db-tabs">
+    <button class="db-tab active" onclick="dbTab(0)">빈자리 관리</button>
+    <button class="db-tab" onclick="dbTab(1)">디자이너</button>
+    <button class="db-tab" onclick="dbTab(2)">스타일카드</button>
+  </div>
+
+  <div class="db-wrap">
+
+    <!-- 탭 0: 빈자리 관리 -->
+    <div class="db-panel active" id="dbPanel0">
+      <div class="db-today-label" id="dbTodayLabel"></div>
+      <div class="db-today-hint">탭 한 번으로 열림 ↔ 마감 전환</div>
+      <div class="slot-grid" id="dbSlotGrid"></div>
+    </div>
+
+    <!-- 탭 1: 디자이너 관리 -->
+    <div class="db-panel" id="dbPanel1">
+      <div class="dsgn-add-card">
+        <div class="dsgn-add-title">✂️ 새 디자이너 추가</div>
+        <div class="auth-2col">
+          <div class="dsgn-field">
+            <label>이름</label>
+            <input type="text" id="newDsgName" placeholder="김지수" />
+          </div>
+          <div class="dsgn-field">
+            <label>로그인 아이디</label>
+            <input type="text" id="newDsgId" placeholder="jisu" autocomplete="off" />
+          </div>
+        </div>
+        <div class="dsgn-field">
+          <label>임시 비밀번호 (디자이너에게 알려주세요)</label>
+          <input type="text" id="newDsgPw" placeholder="초기 비밀번호 설정" autocomplete="off" />
+        </div>
+        <p class="dsgn-err" id="dsgnErr"></p>
+        <button class="dsgn-add-btn" onclick="addDesigner()">디자이너 추가</button>
+      </div>
+      <div class="db-sec-label">등록된 디자이너</div>
+      <div id="dsgnList"></div>
+    </div>
+
+    <!-- 탭 2: 스타일카드 -->
+    <div class="db-panel" id="dbPanel2">
+      <div class="sc-sort-bar">
+        <span class="sc-sort-label">정렬</span>
+        <button class="sc-sort-btn active" id="sortBtnTime" onclick="scSort('time',this)">시간순</button>
+        <button class="sc-sort-btn" id="sortBtnDsgn" onclick="scSort('designer',this)">디자이너별</button>
+      </div>
+      <div id="dbScCards"></div>
+    </div>
+
+  </div>
+</div><!-- /viewDashboard -->
+
+
+<!-- 스타일카드 상세 오버레이 -->
+<div class="sc-detail-overlay" id="scDetailOverlay" onclick="if(event.target===this)closeScDetail()">
+  <div class="sc-detail-sheet">
+    <div class="sc-detail-hd">
+      <strong style="font-size:15px;color:var(--dark)">스타일카드 상세</strong>
+      <button onclick="closeScDetail()"
+        style="width:30px;height:30px;border-radius:50%;border:none;background:var(--border);font-size:14px;cursor:pointer">✕</button>
+    </div>
+    <div class="sc-detail-body" id="scDetailBody"></div>
   </div>
 </div>
 
-<!-- ─── Benefits ─── -->
-<section class="section section-white">
-  <div class="container">
-    <div class="section-label">Benefits</div>
-    <h2 class="section-title serif">헤어이어를 쓰면 달라지는 것</h2>
-    <div class="benefit-grid">
-      <div class="benefit-card">
-        <div class="benefit-icon">⚡</div>
-        <h3>공석 자동 채움</h3>
-        <p>취소나 당일 여유 슬롯을 자동으로 플랫폼에 공개해 주변 고객이 즉시 예약합니다.</p>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">📵</div>
-        <h3>전화 예약 제로</h3>
-        <p>고객이 앱에서 직접 예약하므로 전화 응대에 드는 시간을 완전히 줄일 수 있어요.</p>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">🔔</div>
-        <h3>노쇼 방지 알림</h3>
-        <p>방문 1시간 전 자동 리마인더를 발송해 노쇼율을 평균 82% 낮춰드립니다.</p>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">📊</div>
-        <h3>매출 통계 분석</h3>
-        <p>요일별, 시간대별 예약 패턴과 매출을 한눈에 확인해 운영을 최적화하세요.</p>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">💬</div>
-        <h3>스타일카드 수신</h3>
-        <p>고객이 미리 만들어 온 스타일카드를 받아 시술 전 소통 시간을 줄이세요.</p>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">📍</div>
-        <h3>검색 노출 부스팅</h3>
-        <p>주변 고객이 미용실 찾기를 할 때 헤어이어 등록 미용실이 우선 노출됩니다.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── How it works for Salons ─── -->
-<section class="section">
-  <div class="container">
-    <div class="section-label">How it works</div>
-    <h2 class="section-title serif" style="margin-bottom:48px;">등록부터 예약까지 3단계</h2>
-
-    <div class="how-row">
-      <div class="how-row-visual">🖊️<br/>등록 신청서<br/><span style="font-size:16px;color:var(--sub);">5분이면 완료</span></div>
-      <div class="how-row-content">
-        <div class="section-label">Step 1</div>
-        <h2>간편 등록 신청</h2>
-        <p>미용실 이름, 주소, 운영 서비스, 요금제만 선택하면 바로 등록 신청이 완료됩니다. 담당자가 1영업일 내 검토 후 승인해드립니다.</p>
-        <a href="salon-join.html" class="btn btn-primary btn-sm">등록 신청하기</a>
-      </div>
-    </div>
-
-    <div class="how-row reverse">
-      <div class="how-row-visual">📅<br/>슬롯 관리<br/><span style="font-size:16px;color:var(--sub);">실시간 반영</span></div>
-      <div class="how-row-content">
-        <div class="section-label">Step 2</div>
-        <h2>예약 슬롯 공개</h2>
-        <p>대시보드에서 오늘의 빈 시간대를 몇 초 만에 공개할 수 있어요. 취소가 생기면 즉시 열어두면 빠르게 채워집니다.</p>
-      </div>
-    </div>
-
-    <div class="how-row">
-      <div class="how-row-visual">💰<br/>+22% 매출<br/><span style="font-size:16px;color:var(--sub);">평균 증가</span></div>
-      <div class="how-row-content">
-        <div class="section-label">Step 3</div>
-        <h2>공석이 수익으로</h2>
-        <p>주변 고객이 실시간으로 빈자리를 확인하고 예약합니다. 화요일 오후, 저녁 마지막 타임 같은 비수기 슬롯도 채워보세요.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Pricing ─── -->
-<section class="section section-white" id="pricing">
-  <div class="container">
-    <div class="section-label">Pricing</div>
-    <h2 class="section-title serif">합리적인 요금제</h2>
-    <p class="section-desc">공석이 채워질수록 수익이 늘어나는 구조. 처음 30일은 무료입니다.</p>
-    <div class="pricing-grid">
-      <div class="pricing-card">
-        <div class="pricing-name">베이직</div>
-        <div class="pricing-price">29,000<span>원</span></div>
-        <div class="pricing-period">/ 월 · 부가세 별도</div>
-        <hr class="pricing-divider" />
-        <ul class="pricing-features">
-          <li>실시간 예약 슬롯 관리</li>
-          <li>예약 고객 문자 알림</li>
-          <li>월 예약 100건</li>
-          <li>기본 통계 대시보드</li>
-          <li>이메일 고객 지원</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-outline" onclick="location.href='salon-join.html?plan=basic'">무료로 시작하기</button>
-      </div>
-      <div class="pricing-card featured">
-        <div class="pricing-badge">가장 인기</div>
-        <div class="pricing-name">프로</div>
-        <div class="pricing-price">59,000<span>원</span></div>
-        <div class="pricing-period">/ 월 · 부가세 별도</div>
-        <hr class="pricing-divider" />
-        <ul class="pricing-features">
-          <li>베이직 모든 기능 포함</li>
-          <li>무제한 예약 건수</li>
-          <li>카카오 알림톡 발송</li>
-          <li>고급 매출 통계 분석</li>
-          <li>고객 재방문 리마인더</li>
-          <li>검색 우선 노출 부스팅</li>
-          <li>전화 + 채팅 고객 지원</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-fill" onclick="location.href='salon-join.html?plan=pro'">지금 시작하기</button>
-      </div>
-      <div class="pricing-card">
-        <div class="pricing-name">체인 · 프랜차이즈</div>
-        <div class="pricing-price">문의<span></span></div>
-        <div class="pricing-period">맞춤 견적 제공</div>
-        <hr class="pricing-divider" />
-        <ul class="pricing-features">
-          <li>프로 모든 기능 포함</li>
-          <li>멀티 지점 통합 관리</li>
-          <li>브랜드 전용 예약 페이지</li>
-          <li>API 연동 지원</li>
-          <li>전담 계정 매니저</li>
-          <li>SLA 보장</li>
-        </ul>
-        <button class="pricing-btn pricing-btn-dark" onclick="location.href='salon-join.html?plan=chain'">도입 문의하기</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Reviews (salon owners) ─── -->
-<section class="section">
-  <div class="container">
-    <div class="section-label">Reviews</div>
-    <h2 class="section-title serif">사장님들의 실제 후기</h2>
-    <div class="reviews-grid">
-      <div class="review-card">
-        <div class="review-stars">★★★★★</div>
-        <p class="review-text">"화요일 오후 공석이 늘 고민이었는데, 등록 한 달 만에 거의 꽉 찼어요. 전화 받는 시간도 줄고 너무 편해졌습니다."</p>
-        <div class="review-author"><div class="review-avatar">✂️</div><div><div class="review-name">김현정 원장</div><div class="review-salon">헤어살롱 블랑 · 마포구</div></div></div>
-      </div>
-      <div class="review-card">
-        <div class="review-stars">★★★★★</div>
-        <p class="review-text">"저녁 7~9시 슬롯이 매번 비었는데, 헤어이어 덕분에 퇴근 후 손님들이 알아서 예약하고 옵니다. 월 매출 18% 올랐어요."</p>
-        <div class="review-author"><div class="review-avatar">💇</div><div><div class="review-name">박민준 원장</div><div class="review-salon">스튜디오 레이어 · 강남구</div></div></div>
-      </div>
-      <div class="review-card">
-        <div class="review-stars">★★★★☆</div>
-        <p class="review-text">"스타일카드 기능이 진짜 도움돼요. 고객이 미리 카드를 보내주면 상담 시간이 반으로 줄어요. 노쇼도 거의 없어졌고요."</p>
-        <div class="review-author"><div class="review-avatar">🌿</div><div><div class="review-name">이소연 원장</div><div class="review-salon">그린헤어 · 서대문구</div></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── FAQ ─── -->
-<section class="section section-white">
-  <div class="container" style="max-width:720px;">
-    <div class="section-label">FAQ</div>
-    <h2 class="section-title serif">자주 묻는 질문</h2>
-    <div class="faq-list">
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          등록 후 바로 서비스를 이용할 수 있나요?<span class="faq-arrow">▾</span>
-        </button>
-        <div class="faq-a">신청서 제출 후 담당자가 1영업일 내 검토 후 승인합니다. 승인되면 바로 슬롯 관리 대시보드에 접근할 수 있어요.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          계약 기간이 있나요?<span class="faq-arrow">▾</span>
-        </button>
-        <div class="faq-a">최소 계약 기간이 없습니다. 월 단위로 자유롭게 해지할 수 있으며, 첫 30일은 무료로 이용하실 수 있습니다.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          기존에 쓰던 예약 시스템과 함께 쓸 수 있나요?<span class="faq-arrow">▾</span>
-        </button>
-        <div class="faq-a">네, 가능합니다. 헤어이어는 기존 예약 시스템과 병행 운영할 수 있도록 설계되었습니다. 프로/체인 요금제에서는 API 연동도 지원합니다.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          수수료가 발생하나요?<span class="faq-arrow">▾</span>
-        </button>
-        <div class="faq-a">예약 건당 별도 수수료는 없습니다. 월 구독 요금만 납부하시면 예약 건수에 관계없이 (프로 기준) 무제한 사용 가능합니다.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          체인점인데 지점별로 관리할 수 있나요?<span class="faq-arrow">▾</span>
-        </button>
-        <div class="faq-a">체인/프랜차이즈 요금제에서는 여러 지점을 하나의 대시보드에서 통합 관리할 수 있습니다. 도입 문의를 통해 맞춤 견적을 받아보세요.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── CTA ─── -->
-<section class="cta">
-  <h2>지금 바로 <em>공석을 수익으로</em> 바꾸세요</h2>
-  <p>처음 30일 무료. 카드 등록 없이 시작할 수 있어요.</p>
-  <div class="cta-actions">
-    <a href="salon-join.html" class="btn btn-primary">무료로 등록 신청하기</a>
-    <a href="#pricing" class="btn" style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.35);">요금제 다시 보기</a>
-  </div>
-</section>
-
-<footer>
-  <div class="footer-logo">헤어이어</div>
-  <div class="footer-links">
-    <a href="#">서비스 소개</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">고객센터</a>
-  </div>
-  <p>© 2026 헤어이어. All rights reserved.</p>
-</footer>
-
-<script>
-function toggleFaq(btn) {
-  const item = btn.closest('.faq-item');
-  item.classList.toggle('open');
-}
-const hamburger = document.getElementById('hamburger'), navMenu = document.getElementById('navMenu');
-hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
-navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
-</script>
-
+<script src="haireo-data.js"></script>
+<script src="login-modal.js"></script>
 <script>
 /* ═══════════════════════════════════════════════
-   사장님 대시보드 — Firebase 연동
+   for-salon.html — 사장님 회원가입 + 대시보드
 ═══════════════════════════════════════════════ */
-let db = null;
-let salonsList = [];          // Firestore salons 전체 목록
-let unsubAlerts = null;       // 예약알림 onSnapshot 해제 함수
-let selectedScheduleSalon = null;
+const OWNER_KEY = 'haireo_owner_auth_v2';
+let ownerAuth = null; // { id, name, phone, salonId, salonName }
+let scSortMode = 'time';
 
-const TODAY = (() => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+/* ── 초기화 ── */
+(function init() {
+  try { ownerAuth = JSON.parse(localStorage.getItem(OWNER_KEY)); } catch (e) {}
+  if (ownerAuth && HD.getSalon(ownerAuth.salonId)) {
+    showDashboard();
+  } else {
+    ownerAuth = null;
+    showLandingView();
+  }
+  const ham = document.getElementById('hamburger');
+  const menu = document.getElementById('navMenu');
+  ham.addEventListener('click', () => menu.classList.toggle('open'));
+  menu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => menu.classList.remove('open')));
 })();
 
-/* ── Firebase 초기화 ── */
-(async () => {
-  try {
-    const cfg = await fetch('/api/firebase-config').then(r => r.json());
-    if (!cfg.projectId) throw new Error('projectId 없음');
-    if (!firebase.apps.length) firebase.initializeApp(cfg);
-    db = firebase.firestore();
-    document.getElementById('fbStatus').textContent = 'Firebase 연결됨';
-    document.getElementById('fbStatus').className = 'fb-status ok';
-    listenSalons();
-    requestNotifPermission();
-  } catch (e) {
-    document.getElementById('fbStatus').textContent = 'Firebase 미설정';
-    document.getElementById('fbStatus').className = 'fb-status err';
-    console.warn('Firebase init error:', e);
-  }
-})();
+/* ── 뷰 전환 ── */
+const VIEWS = ['viewLanding','viewSignup','viewLogin','viewDashboard'];
+function setView(id) {
+  VIEWS.forEach(v => { document.getElementById(v).style.display = v === id ? 'block' : 'none'; });
+  window.scrollTo(0, 0);
+}
+function showLandingView() { setView('viewLanding'); }
+function showSignupView()  { setView('viewSignup'); }
+function showLoginView()   {
+  setView('viewLogin');
+  setTimeout(() => { const el = document.getElementById('liPhone'); if (el) el.focus(); }, 80);
+}
+function showDashboard() {
+  setView('viewDashboard');
+  const salon = HD.getSalon(ownerAuth.salonId);
+  document.getElementById('dbSalonName').textContent = salon ? salon.name : ownerAuth.salonName;
+  document.getElementById('dbOwnerSub').textContent = ownerAuth.name + ' 원장님';
+  updateNavOwner(true);
+  renderSlots();
+  renderDesigners();
+  renderScCards();
+}
 
-/* ── Salons 실시간 수신 ── */
-function listenSalons() {
-  firebase.firestore().collection('salons').onSnapshot(snap => {
-    salonsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    populateSalonSelects();
+/* ── Nav 업데이트 ── */
+function updateNavOwner(on) {
+  const li = document.getElementById('navOwnerLi');
+  if (on && ownerAuth) {
+    li.innerHTML = `<a href="#" onclick="event.preventDefault()" class="nav-salon active"
+      style="background:var(--dark);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+      ${esc(ownerAuth.salonName)}</a>`;
+  } else {
+    li.innerHTML = `<a href="#" class="nav-salon active" style="background:var(--dark);"
+      onclick="event.preventDefault();showLoginView()">사장님이신가요?</a>`;
+  }
+}
+
+/* ── 회원가입 ── */
+function doSignup() {
+  const name       = v('suName');
+  const phone      = v('suPhone');
+  const pw         = document.getElementById('suPw').value;
+  const pw2        = document.getElementById('suPw2').value;
+  const salonName  = v('suSalonName');
+  const address    = v('suAddress');
+  const salonPhone = v('suSalonPhone');
+  const naverUrl   = v('suNaverUrl');
+  const start      = parseInt(document.getElementById('suStart').value);
+  const end        = parseInt(document.getElementById('suEnd').value);
+  const errEl      = document.getElementById('suErr');
+  const showErr = (m) => { errEl.textContent = m; errEl.classList.add('show'); };
+  errEl.classList.remove('show');
+
+  if (!name)       return showErr('사장님 이름을 입력해주세요.');
+  if (!phone)      return showErr('전화번호를 입력해주세요.');
+  if (pw.length < 6) return showErr('비밀번호는 6자 이상이어야 합니다.');
+  if (pw !== pw2)  return showErr('비밀번호가 일치하지 않습니다.');
+  if (!salonName)  return showErr('미용실 이름을 입력해주세요.');
+  if (!address)    return showErr('주소를 입력해주세요.');
+  if (HD.ownerPhoneExists(phone)) return showErr('이미 가입된 전화번호입니다.');
+
+  const salon = HD.saveSalon({
+    name: salonName, address, phone: salonPhone, naverUrl,
+    businessHours: { start, end },
+    designers: [], slots: {},
   });
+  const owner = HD.saveOwner({ name, phone, password: pw, salonId: salon.id, salonName: salon.name });
+  ownerAuth = { id: owner.id, name: owner.name, phone: owner.phone, salonId: salon.id, salonName: salon.name };
+  localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
+  showDashboard();
 }
 
-function populateSalonSelects() {
-  ['scheduleSalonSel', 'alertSalonSel'].forEach(id => {
-    const sel = document.getElementById(id);
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">-- 미용실을 선택하세요 --</option>';
-    salonsList.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.name;
-      sel.appendChild(opt);
-    });
-    if (prev) sel.value = prev;
-  });
+/* ── 로그인 ── */
+function doLogin() {
+  const phone = v('liPhone');
+  const pw    = document.getElementById('liPw').value;
+  const errEl = document.getElementById('liErr');
+  errEl.classList.remove('show');
+  if (!phone || !pw) { errEl.textContent = '전화번호와 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
+  const found = HD.findOwner(phone, pw);
+  if (!found) { errEl.textContent = '전화번호 또는 비밀번호가 틀렸습니다.'; errEl.classList.add('show'); return; }
+  ownerAuth = { id: found.id, name: found.name, phone: found.phone, salonId: found.salonId, salonName: found.salonName };
+  localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
+  showDashboard();
 }
 
-/* ── 탭 전환 ── */
-function switchTab(n) {
-  document.querySelectorAll('.dash-tab').forEach((t, i) => t.classList.toggle('active', i === n));
-  document.querySelectorAll('.dash-panel').forEach((p, i) => p.classList.toggle('active', i === n));
+/* ── 로그아웃 ── */
+function doLogout() {
+  ownerAuth = null;
+  localStorage.removeItem(OWNER_KEY);
+  updateNavOwner(false);
+  showLandingView();
 }
 
-/* ── 탭0: 미용실 등록 ── */
-async function registerSalon(e) {
-  e.preventDefault();
-  if (!db) return showRegMsg('Firebase가 연결되지 않았습니다.', 'error');
-  const btn = document.getElementById('regBtn');
-  btn.disabled = true; btn.textContent = '저장 중...';
-
-  const salon = {
-    name:          document.getElementById('regName').value.trim(),
-    address:       document.getElementById('regAddress').value.trim(),
-    phone:         document.getElementById('regPhone').value.trim(),
-    lat:           parseFloat(document.getElementById('regLat').value) || null,
-    lng:           parseFloat(document.getElementById('regLng').value) || null,
-    businessHours: {
-      start: parseInt(document.getElementById('regStart').value),
-      end:   parseInt(document.getElementById('regEnd').value),
-    },
-    slots:       {},
-    createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
-  };
-
-  // 오늘 슬롯 초기화
-  salon.slots[TODAY] = initSlots(salon.businessHours);
-
-  try {
-    await db.collection('salons').add(salon);
-    document.getElementById('regForm').reset();
-    showRegMsg(`"${salon.name}" 등록 완료!`, 'success');
-  } catch (err) {
-    showRegMsg('저장 실패: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Firestore에 등록하기';
-  }
+/* ── 대시보드 탭 ── */
+function dbTab(n) {
+  document.querySelectorAll('.db-tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.db-panel').forEach((p, i) => p.classList.toggle('active', i === n));
 }
 
-function showRegMsg(msg, type) {
-  const el = document.getElementById('regMsg');
-  el.textContent = msg;
-  el.className = 'dash-msg ' + type;
-  el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
-}
-
-function initSlots(bh) {
-  const slots = {};
-  for (let h = bh.start; h < bh.end; h++) {
-    slots[`${String(h).padStart(2,'0')}:00`] = 'open';
-  }
-  return slots;
-}
-
-/* ── 탭1: 스케줄 관리 ── */
-async function loadSchedule() {
-  const salonId = document.getElementById('scheduleSalonSel').value;
-  const wrap = document.getElementById('scheduleWrap');
-  if (!salonId || !db) {
-    wrap.innerHTML = '<p class="empty-msg">미용실을 선택하면 오늘 스케줄이 표시됩니다.</p>';
-    return;
-  }
-  const salon = salonsList.find(s => s.id === salonId);
+/* ── 탭0: 빈자리 관리 ── */
+function renderSlots() {
+  const salon = HD.getSalon(ownerAuth.salonId);
   if (!salon) return;
-  selectedScheduleSalon = salon;
-  renderSchedule(salon);
-}
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const d = today;
+  document.getElementById('dbTodayLabel').textContent =
+    `📅 ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 오늘`;
 
-function renderSchedule(salon) {
-  const wrap = document.getElementById('scheduleWrap');
-  const todaySlots = salon.slots?.[TODAY] || initSlots(salon.businessHours);
-  const times = Object.keys(todaySlots).sort();
-
-  wrap.innerHTML = `
-    <div class="schedule-wrap">
-      <div class="schedule-date">📅 오늘 (${TODAY}) 슬롯 — 클릭해서 열림/차단 전환</div>
-      <div class="slot-grid" id="slotGrid">
-        ${times.map(t => {
-          const st = todaySlots[t];
-          const label = st === 'open' ? `${t} 열림` : st === 'booked' ? `${t} 예약됨` : `${t} 차단`;
-          return `<button class="slot-btn ${st}" onclick="toggleSlot('${salon.id}','${t}','${st}')">${label}</button>`;
-        }).join('')}
-      </div>
-    </div>`;
-}
-
-async function toggleSlot(salonId, time, currentStatus) {
-  if (!db || currentStatus === 'booked') return;
-  const newStatus = currentStatus === 'open' ? 'blocked' : 'open';
-  try {
-    await db.collection('salons').doc(salonId).update({
-      [`slots.${TODAY}.${time}`]: newStatus
-    });
-    // 목록 갱신 (listenSalons가 자동으로 처리하지만 즉시 반영용)
-    const salon = salonsList.find(s => s.id === salonId);
-    if (salon) {
-      if (!salon.slots) salon.slots = {};
-      if (!salon.slots[TODAY]) salon.slots[TODAY] = {};
-      salon.slots[TODAY][time] = newStatus;
-      renderSchedule(salon);
-    }
-  } catch (err) {
-    alert('슬롯 업데이트 실패: ' + err.message);
+  const bh = salon.businessHours || { start: 10, end: 21 };
+  const saved = salon.slots?.[todayStr] || {};
+  let html = '';
+  for (let h = bh.start; h < bh.end; h++) {
+    const key = `${String(h).padStart(2,'0')}:00`;
+    const st = saved[key] || 'open';
+    html += `<button class="slot-big-btn ${st}" onclick="toggleSlot('${key}')">
+      ${h}시<div class="slot-status">${st === 'open' ? '✓ 열림' : '✗ 마감'}</div>
+    </button>`;
   }
+  document.getElementById('dbSlotGrid').innerHTML = html;
 }
 
-/* ── 탭2: 예약 알림 ── */
-function loadAlerts() {
-  const salonId = document.getElementById('alertSalonSel').value;
-  const wrap = document.getElementById('alertsWrap');
-  if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
-  if (!salonId || !db) {
-    wrap.innerHTML = '<p class="empty-msg">미용실을 선택하면 예약 알림이 표시됩니다.</p>';
+function toggleSlot(key) {
+  const salon = HD.getSalon(ownerAuth.salonId);
+  if (!salon) return;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const slots = { ...(salon.slots || {}) };
+  const today = { ...(slots[todayStr] || {}) };
+  today[key] = (today[key] || 'open') === 'open' ? 'blocked' : 'open';
+  slots[todayStr] = today;
+  HD.saveSalon({ ...salon, slots });
+  localStorage.setItem('haireo_owner_slots', JSON.stringify({ salonId: ownerAuth.salonId, date: todayStr, slots: today }));
+  window.dispatchEvent(new CustomEvent('haireo-slots-changed'));
+  renderSlots();
+}
+
+/* ── 탭1: 디자이너 관리 ── */
+function renderDesigners() {
+  const salon = HD.getSalon(ownerAuth.salonId);
+  const list = document.getElementById('dsgnList');
+  const designers = salon?.designers || [];
+  if (!designers.length) {
+    list.innerHTML = '<p class="db-empty">아직 등록된 디자이너가 없어요.<br>디자이너를 추가하면 스타일카드를 배정할 수 있어요.</p>';
     return;
   }
-
-  let prevIds = new Set();
-  unsubAlerts = db.collection('bookings')
-    .where('salonId', '==', salonId)
-    .where('status', '==', 'pending')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // 새 예약 푸시 알림
-      bookings.forEach(b => {
-        if (!prevIds.has(b.id)) {
-          pushNotify(`새 예약: ${b.customerName}`, `${b.date} ${b.time} · ${b.service}`);
-        }
-      });
-      prevIds = new Set(bookings.map(b => b.id));
-
-      // 뱃지 업데이트
-      const badge = document.getElementById('pendingBadge');
-      badge.textContent = bookings.length;
-      badge.dataset.count = bookings.length;
-
-      renderAlerts(bookings, salonId);
-    });
-}
-
-function renderAlerts(bookings, salonId) {
-  const wrap = document.getElementById('alertsWrap');
-  if (!bookings.length) {
-    wrap.innerHTML = '<p class="empty-msg">대기 중인 예약이 없습니다.</p>';
-    return;
-  }
-  wrap.innerHTML = bookings.map(b => `
-    <div class="booking-card" id="bc-${b.id}">
-      <div class="booking-card-header">
-        <div class="booking-card-name">${esc(b.customerName)}</div>
-        <div class="booking-card-time">${b.date} ${b.time}</div>
+  list.innerHTML = designers.map((d, i) => `
+    <div class="dsgn-row">
+      <div>
+        <div class="dsgn-row-name">${esc(d.name)}</div>
+        <div class="dsgn-row-id">아이디: ${esc(d.loginId)}</div>
       </div>
-      <div class="booking-card-info">
-        📞 ${esc(b.phone)} &nbsp;·&nbsp; 💇 ${esc(b.service || '미지정')}
-      </div>
-      <div class="booking-card-actions">
-        <button class="btn-confirm" onclick="confirmBooking('${b.id}','${salonId}','${b.date}','${b.time}')">수락 ✓</button>
-        <button class="btn-reject"  onclick="rejectBooking('${b.id}','${salonId}','${b.date}','${b.time}')">거절 ✗</button>
-      </div>
+      <button class="dsgn-del-btn" onclick="deleteDesigner(${i})">삭제</button>
     </div>`).join('');
 }
 
-async function confirmBooking(bookingId, salonId, date, time) {
-  if (!db) return;
-  try {
-    const batch = db.batch();
-    batch.update(db.collection('bookings').doc(bookingId), { status: 'confirmed' });
-    batch.update(db.collection('salons').doc(salonId), { [`slots.${date}.${time}`]: 'booked' });
-    await batch.commit();
-  } catch (err) { alert('수락 실패: ' + err.message); }
-}
-
-async function rejectBooking(bookingId, salonId, date, time) {
-  if (!db) return;
-  try {
-    const batch = db.batch();
-    batch.update(db.collection('bookings').doc(bookingId), { status: 'rejected' });
-    batch.update(db.collection('salons').doc(salonId), { [`slots.${date}.${time}`]: 'open' });
-    await batch.commit();
-  } catch (err) { alert('거절 실패: ' + err.message); }
-}
-
-/* ── 푸시 알림 ── */
-function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
+function addDesigner() {
+  const name     = document.getElementById('newDsgName').value.trim();
+  const loginId  = document.getElementById('newDsgId').value.trim();
+  const password = document.getElementById('newDsgPw').value.trim();
+  const errEl    = document.getElementById('dsgnErr');
+  errEl.classList.remove('show');
+  if (!name || !loginId || !password) { errEl.textContent = '이름, 아이디, 비밀번호를 모두 입력해주세요.'; errEl.classList.add('show'); return; }
+  const salon = HD.getSalon(ownerAuth.salonId);
+  if (!salon) return;
+  if ((salon.designers || []).some(d => d.loginId === loginId)) {
+    errEl.textContent = '이미 사용 중인 아이디입니다.'; errEl.classList.add('show'); return;
   }
+  HD.saveSalon({ ...salon, designers: [...(salon.designers || []), { name, loginId, password }] });
+  document.getElementById('newDsgName').value = '';
+  document.getElementById('newDsgId').value = '';
+  document.getElementById('newDsgPw').value = '';
+  renderDesigners();
 }
 
-function pushNotify(title, body) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/favicon.ico' });
-  }
+function deleteDesigner(idx) {
+  if (!confirm('이 디자이너를 삭제하시겠어요?')) return;
+  const salon = HD.getSalon(ownerAuth.salonId);
+  if (!salon) return;
+  HD.saveSalon({ ...salon, designers: (salon.designers || []).filter((_, i) => i !== idx) });
+  renderDesigners();
 }
 
-function esc(s) {
-  return String(s || '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ── 탭3: 스타일카드 ── */
-let scFilter = 'all'; // 'all' or designer loginId
-let scSalonId = null;
-
-function loadStyleCards() {
-  scSalonId = document.getElementById('cardSalonSel').value;
-  scFilter = 'all';
-  const wrap = document.getElementById('styleCardsWrap');
-  if (!scSalonId) {
-    wrap.innerHTML = '<p class="empty-msg">미용실을 선택하면 스타일카드 목록이 표시됩니다.</p>';
-    document.getElementById('cardFilterRow').style.display = 'none';
-    return;
-  }
-  // 디자이너 필터 칩 빌드
-  const salon = HD.getSalon(scSalonId);
-  const designers = salon?.designers || [];
-  const filterRow = document.getElementById('cardFilterRow');
-  const filterWrap = document.getElementById('cardDesignerFilter');
-  if (designers.length > 1) {
-    filterRow.style.display = 'flex';
-    filterWrap.innerHTML = [
-      `<button class="sc-designer-chip active" onclick="scSetFilter('all',this)">전체</button>`,
-      ...designers.map(d =>
-        `<button class="sc-designer-chip" onclick="scSetFilter('${d.loginId}',this)">${esc(d.name)}</button>`)
-    ].join('');
-  } else {
-    filterRow.style.display = 'none';
-  }
-  renderStyleCards();
-}
-
-function scSetFilter(f, btn) {
-  scFilter = f;
-  document.querySelectorAll('.sc-designer-chip').forEach(c => c.classList.remove('active'));
+/* ── 탭2: 스타일카드 ── */
+function scSort(mode, btn) {
+  scSortMode = mode;
+  document.querySelectorAll('.sc-sort-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  renderStyleCards();
+  renderScCards();
 }
 
-function renderStyleCards() {
-  const wrap = document.getElementById('styleCardsWrap');
-  if (!scSalonId) return;
-  let cards = HD.getCardsBySalon(scSalonId);
-  if (scFilter !== 'all') cards = cards.filter(c => c.designerLoginId === scFilter);
-
+function renderScCards() {
+  if (!ownerAuth) return;
+  let cards = HD.getCardsBySalon(ownerAuth.salonId);
+  const wrap = document.getElementById('dbScCards');
   if (!cards.length) {
-    wrap.innerHTML = '<p class="empty-msg">아직 받은 스타일카드가 없습니다.</p>';
+    wrap.innerHTML = '<p class="db-empty">아직 받은 스타일카드가 없습니다.<br>고객이 스타일카드를 보내면 여기에 표시돼요.</p>';
     return;
   }
 
-  wrap.innerHTML = cards.map(c => {
-    const tags = [...(c.styles||[]), ...(c.color ? [c.color] : [])];
-    const name = c.customerName || '익명의 고객';
-    const timeStr = c.appointmentTime ? `🕐 ${esc(c.appointmentTime)}` : '시간 미정';
-    return `
-    <div class="sc-card" onclick="openScDetail('${esc(c.id)}')">
-      <div class="sc-card-hd">
-        <div class="sc-card-name">${esc(name)}</div>
-        <div class="sc-card-time">${timeStr}</div>
-      </div>
-      <div class="sc-card-meta">
-        ${c.designerName ? `✂️ ${esc(c.designerName)} · ` : ''}${esc(c.gender||'')}${c.gender&&tags.length?' · ':''}${tags.slice(0,3).map(esc).join(', ')}
-      </div>
-      ${tags.length ? `<div class="sc-card-tags">${tags.map(t=>`<span class="sc-card-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
-    </div>`;
-  }).join('');
-
-  // 카드 수 populate on salon selects (for style cards we use HD-based salons)
-  populateSalonSelects();
+  if (scSortMode === 'time') {
+    cards = [...cards].sort((a, b) => {
+      if (a.appointmentTime && b.appointmentTime) return a.appointmentTime.localeCompare(b.appointmentTime);
+      if (a.appointmentTime) return -1;
+      if (b.appointmentTime) return 1;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
+    wrap.innerHTML = cards.map(scCardHtml).join('');
+  } else {
+    const groups = {};
+    cards.forEach(c => {
+      const k = c.designerName || '디자이너 미지정';
+      (groups[k] = groups[k] || []).push(c);
+    });
+    wrap.innerHTML = Object.entries(groups).map(([dsgn, list]) =>
+      `<div class="sc-group-label">✂️ ${esc(dsgn)} (${list.length}건)</div>${list.map(scCardHtml).join('')}`
+    ).join('');
+  }
 }
 
-let _scCards = []; // for detail lookup
+function scCardHtml(c) {
+  const tags = [...(c.styles || []), ...(c.color ? [c.color] : [])];
+  const name = c.customerName || '익명의 고객';
+  const time = c.appointmentTime ? `🕐 ${esc(c.appointmentTime)}` : '시간 미정';
+  return `<div class="sc-card" onclick="openScDetail('${esc(c.id)}')">
+    <div class="sc-card-hd">
+      <div class="sc-card-name">${esc(name)}</div>
+      <div class="sc-card-time">${time}</div>
+    </div>
+    <div class="sc-card-meta">${c.designerName ? `✂️ ${esc(c.designerName)} · ` : ''}${esc(c.gender || '')}${c.gender && tags.length ? ' · ' : ''}${tags.slice(0, 3).map(esc).join(', ')}</div>
+    ${tags.length ? `<div class="sc-card-tags">${tags.map(t => `<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 function openScDetail(cardId) {
-  _scCards = HD.getCardsBySalon(scSalonId);
-  const card = _scCards.find(c => c.id === cardId);
+  const card = HD.getCardsBySalon(ownerAuth.salonId).find(c => c.id === cardId);
   if (!card) return;
-  const note = card.freeText || '';
-  const tags = [...(card.styles||[]), ...(card.color ? [card.color] : [])];
+  const tags = [...(card.styles || []), ...(card.color ? [card.color] : [])];
   document.getElementById('scDetailBody').innerHTML = `
     <div style="background:var(--cream);border-radius:12px;padding:14px 16px;margin-bottom:16px">
-      <div class="sc-detail-row"><span class="sc-detail-key">고객</span><span class="sc-detail-val">${esc(card.customerName||'익명')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">디자이너</span><span class="sc-detail-val">${esc(card.designerName||'미지정')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">예약 시간</span><span class="sc-detail-val">${esc(card.appointmentTime||'미정')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">성별</span><span class="sc-detail-val">${esc(card.gender||'미선택')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">고객</span><span class="sc-detail-val">${esc(card.customerName || '익명')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">디자이너</span><span class="sc-detail-val">${esc(card.designerName || '미지정')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">예약 시간</span><span class="sc-detail-val">${esc(card.appointmentTime || '미정')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">성별</span><span class="sc-detail-val">${esc(card.gender || '미선택')}</span></div>
     </div>
-    ${(card.styles||[]).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">스타일</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${card.styles.map(esc).join(' · ')}</p>` : ''}
+    ${(card.styles || []).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">스타일</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${card.styles.map(esc).join(' · ')}</p>` : ''}
     ${card.color ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">색상</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${esc(card.color)}</p>` : ''}
-    ${note ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">요청사항</p><p style="font-size:15px;color:var(--dark);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${esc(note)}</p>` : ''}
-    ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${tags.map(t=>`<span class="sc-card-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
-    ${(card.photos||[]).filter(Boolean).length ? `
-      <p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px">참고 사진</p>
-      <div class="sc-photos">${card.photos.filter(Boolean).map(p=>`<div class="sc-photo"><img src="${p}" /></div>`).join('')}</div>` : ''}
+    ${card.freeText ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">요청사항</p><p style="font-size:15px;color:var(--dark);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${esc(card.freeText)}</p>` : ''}
+    ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${tags.map(t => `<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+    ${(card.photos || []).filter(Boolean).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px">참고 사진</p><div class="sc-photos">${card.photos.filter(Boolean).map(p => `<div class="sc-photo"><img src="${p}" loading="lazy" /></div>`).join('')}</div>` : ''}
     <p style="font-size:12px;color:var(--sub);margin-top:14px;text-align:right">${card.createdAt ? new Date(card.createdAt).toLocaleString('ko') : ''}</p>`;
   document.getElementById('scDetailOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1006,31 +950,14 @@ function closeScDetail() {
   document.body.style.overflow = '';
 }
 
-// populate style cards salon selector (HD-based salons)
-(function populateScSalonSel() {
-  if (typeof HD === 'undefined') return;
-  const sel = document.getElementById('cardSalonSel');
-  HD.getSalons().forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id; opt.textContent = s.name;
-    sel.appendChild(opt);
-  });
-})();
+/* ── FAQ ── */
+function toggleFaq(btn) { btn.closest('.faq-item').classList.toggle('open'); }
+
+/* ── 유틸 ── */
+function v(id) { return document.getElementById(id).value.trim(); }
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
-
-<!-- 스타일카드 상세 오버레이 -->
-<div class="sc-detail-overlay" id="scDetailOverlay" onclick="if(event.target===this)closeScDetail()">
-  <div class="sc-detail-sheet">
-    <div class="sc-detail-hd">
-      <strong style="font-size:15px;color:var(--dark)">스타일카드 상세</strong>
-      <button onclick="closeScDetail()" style="width:30px;height:30px;border-radius:50%;border:none;background:var(--border);font-size:14px;cursor:pointer">✕</button>
-    </div>
-    <div class="sc-detail-body" id="scDetailBody"></div>
-  </div>
-</div>
-
-<script src="haireo-data.js"></script>
-<script src="login-modal.js"></script>
-<script src="owner-bar.js"></script>
 </body>
 </html>

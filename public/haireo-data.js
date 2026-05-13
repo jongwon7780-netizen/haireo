@@ -4,7 +4,11 @@
    모든 CRUD 이 파일 한 곳에서 관리.
 ═══════════════════════════════════════════════ */
 const HD = (function () {
-  const KEYS = { salons: 'haireo_salons', cards: 'haireo_style_cards' };
+  const KEYS = {
+    salons: 'haireo_salons',
+    cards:  'haireo_style_cards',
+    owners: 'haireo_owners',
+  };
 
   function load(key) {
     try { return JSON.parse(localStorage.getItem(key)) || []; }
@@ -30,6 +34,25 @@ const HD = (function () {
       return salon;
     },
     deleteSalon(id) { persist(KEYS.salons, load(KEYS.salons).filter(s => s.id !== id)); },
+
+    /* ── 사장님 인증 ── */
+    getOwners() { return load(KEYS.owners); },
+    saveOwner(data) {
+      const list = load(KEYS.owners);
+      const now = new Date().toISOString();
+      const owner = { createdAt: now, ...data, id: data.id || uid(), updatedAt: now };
+      const idx = list.findIndex(o => o.id === owner.id);
+      if (idx >= 0) list[idx] = owner; else list.push(owner);
+      persist(KEYS.owners, list);
+      return owner;
+    },
+    findOwner(phone, password) {
+      return load(KEYS.owners).find(o => o.phone === phone && o.password === password) || null;
+    },
+    ownerPhoneExists(phone) {
+      return load(KEYS.owners).some(o => o.phone === phone);
+    },
+    deleteOwner(id) { persist(KEYS.owners, load(KEYS.owners).filter(o => o.id !== id)); },
 
     /* ── 디자이너 인증 ── */
     findDesigner(loginId, password) {
