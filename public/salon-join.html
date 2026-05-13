@@ -1,10 +1,66 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>사장님 등록 신청 — 헤어이어</title>
+  <title>미용실 등록 — 헤어이어</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .dsgn-row {
+      background: var(--cream);
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .dsgn-row-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .dsgn-num { font-size: 13px; font-weight: 700; color: var(--sub); }
+    .dsgn-rm {
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid var(--border); background: #fff;
+      color: var(--sub); font-size: 12px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .dsgn-rm:hover { background: #fee8e8; border-color: #d95c5c; color: #d95c5c; }
+    .dsgn-cred-row { display: flex; gap: 8px; margin-top: 8px; }
+    .dsgn-cred-row .form-input { margin-bottom: 0; }
+    .add-dsgn-btn {
+      width: 100%; padding: 13px;
+      border-radius: 12px; border: 2px dashed var(--border);
+      background: #fff; color: var(--sub);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: all 0.15s; margin-top: 4px;
+    }
+    .add-dsgn-btn:hover { border-color: var(--rose); color: var(--rose); background: var(--rose-light); }
+    .summary-card {
+      background: var(--white); border-radius: 14px;
+      border: 1.5px solid var(--border); padding: 20px;
+      margin-bottom: 16px;
+    }
+    .summary-row {
+      display: flex; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--sub); min-width: 80px; flex-shrink: 0; }
+    .summary-val { color: var(--dark); font-weight: 600; word-break: break-all; }
+    .dsgn-summary-item {
+      background: var(--rose-light); border-radius: 8px;
+      padding: 8px 12px; margin-bottom: 6px; font-size: 13px;
+    }
+    .dsgn-summary-name { font-weight: 700; color: var(--rose); }
+    .dsgn-summary-id { color: var(--sub); font-size: 12px; margin-top: 2px; }
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 16px;
+      color: var(--sub);
+    }
+  </style>
 </head>
 <body>
 
@@ -27,7 +83,7 @@
   <div style="text-align:center;margin-bottom:32px;">
     <div class="section-label" style="display:block;text-align:center;">Salon Registration</div>
     <h1 class="serif" style="font-size:clamp(22px,3.5vw,30px);margin-bottom:8px;">미용실 등록 신청</h1>
-    <p style="font-size:14px;color:var(--sub);">처음 30일은 무료. 카드 등록 없이 시작하세요.</p>
+    <p style="font-size:14px;color:var(--sub);">디자이너까지 등록하면 스타일카드를 바로 받을 수 있어요.</p>
   </div>
 
   <!-- ─── Progress ─── -->
@@ -39,186 +95,104 @@
     <div class="progress-line" id="pline1"></div>
     <div class="progress-step" data-step="2">
       <div class="progress-dot">2</div>
-      <span class="progress-label">영업 정보</span>
+      <span class="progress-label">디자이너 등록</span>
     </div>
     <div class="progress-line" id="pline2"></div>
     <div class="progress-step" data-step="3">
       <div class="progress-dot">3</div>
-      <span class="progress-label">요금제 선택</span>
+      <span class="progress-label">확인 및 저장</span>
     </div>
   </div>
 
   <!-- ─── Step 1: 기본 정보 ─── -->
   <div class="form-step-panel active" id="fstep1">
     <div class="form-card">
-      <h2 class="form-card-title">기본 정보</h2>
-      <p class="form-card-desc">미용실과 대표자의 기본 정보를 입력해주세요.</p>
+      <h2 class="form-card-title">미용실 기본 정보</h2>
+      <p class="form-card-desc">미용실 정보를 입력해주세요.</p>
 
       <div class="form-group">
-        <label for="salonName">미용실 상호명 *</label>
-        <input class="form-input" type="text" id="salonName" placeholder="예: 헤어살롱 블랑" required />
+        <label for="salonName">미용실 이름 *</label>
+        <input class="form-input" type="text" id="salonName" placeholder="예: 헤어살롱 블랑" />
+      </div>
+      <div class="form-group">
+        <label for="salonAddr">주소 *</label>
+        <input class="form-input" type="text" id="salonAddr" placeholder="서울 마포구 연남동 000-0" />
+      </div>
+      <div class="form-group">
+        <label for="salonPhone">전화번호 *</label>
+        <input class="form-input" type="tel" id="salonPhone" placeholder="02-1234-5678" maxlength="13" />
+      </div>
+      <div class="form-group">
+        <label for="naverUrl">네이버 플레이스 URL <span style="color:var(--sub);font-weight:400;">(선택)</span></label>
+        <input class="form-input" type="url" id="naverUrl" placeholder="https://naver.me/..." />
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label for="ownerName">대표자 이름 *</label>
-          <input class="form-input" type="text" id="ownerName" placeholder="홍길동" required />
+          <label for="openTime">영업 시작 *</label>
+          <select class="form-select" id="openTime">
+            <option value="9">9시</option>
+            <option value="10" selected>10시</option>
+            <option value="11">11시</option>
+            <option value="12">12시</option>
+          </select>
         </div>
         <div class="form-group">
-          <label for="ownerPhone">연락처 *</label>
-          <input class="form-input" type="tel" id="ownerPhone" placeholder="010-0000-0000" maxlength="13" />
+          <label for="closeTime">영업 종료 *</label>
+          <select class="form-select" id="closeTime">
+            <option value="18">18시</option>
+            <option value="19">19시</option>
+            <option value="20">20시</option>
+            <option value="21" selected>21시</option>
+            <option value="22">22시</option>
+          </select>
         </div>
-      </div>
-      <div class="form-group">
-        <label for="ownerEmail">이메일 *</label>
-        <input class="form-input" type="email" id="ownerEmail" placeholder="example@email.com" required />
-      </div>
-      <div class="form-group">
-        <label for="bizNumber">사업자 등록번호</label>
-        <input class="form-input" type="text" id="bizNumber" placeholder="000-00-00000" maxlength="12" />
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn btn-primary" onclick="nextStep(1)">다음 단계 →</button>
+      <button class="btn btn-primary" onclick="step1Next()">다음 단계 →</button>
     </div>
   </div>
 
-  <!-- ─── Step 2: 영업 정보 ─── -->
+  <!-- ─── Step 2: 디자이너 등록 ─── -->
   <div class="form-step-panel" id="fstep2">
     <div class="form-card">
-      <h2 class="form-card-title">영업 정보</h2>
-      <p class="form-card-desc">미용실 위치와 운영 정보를 알려주세요.</p>
-
-      <div class="form-group">
-        <label for="salonAddr">주소 *</label>
-        <input class="form-input" type="text" id="salonAddr" placeholder="서울 마포구 연남동 000-0" required />
-      </div>
-      <div class="form-group">
-        <label for="salonAddrDetail">상세 주소</label>
-        <input class="form-input" type="text" id="salonAddrDetail" placeholder="2층 헤어살롱" />
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="openTime">영업 시작 시간 *</label>
-          <select class="form-select" id="openTime">
-            <option value="">선택</option>
-            <option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option>
-            <option>11:00</option><option>11:30</option><option>12:00</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="closeTime">영업 종료 시간 *</label>
-          <select class="form-select" id="closeTime">
-            <option value="">선택</option>
-            <option>18:00</option><option>19:00</option><option>20:00</option>
-            <option>21:00</option><option>22:00</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>정기 휴무일</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-          <input type="checkbox" id="dMon" /><label for="dMon" style="font-size:13px;cursor:pointer;">월</label>
-          <input type="checkbox" id="dTue" /><label for="dTue" style="font-size:13px;cursor:pointer;">화</label>
-          <input type="checkbox" id="dWed" /><label for="dWed" style="font-size:13px;cursor:pointer;">수</label>
-          <input type="checkbox" id="dThu" /><label for="dThu" style="font-size:13px;cursor:pointer;">목</label>
-          <input type="checkbox" id="dFri" /><label for="dFri" style="font-size:13px;cursor:pointer;">금</label>
-          <input type="checkbox" id="dSat" /><label for="dSat" style="font-size:13px;cursor:pointer;">토</label>
-          <input type="checkbox" id="dSun" /><label for="dSun" style="font-size:13px;cursor:pointer;">일</label>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>제공 서비스 *</label>
-        <div class="service-grid" style="margin-top:6px;">
-          <input type="checkbox" class="service-check" id="svc1" /><label class="service-label" for="svc1"><span class="svc-icon">✂️</span><span class="svc-text">컷</span></label>
-          <input type="checkbox" class="service-check" id="svc2" /><label class="service-label" for="svc2"><span class="svc-icon">🎨</span><span class="svc-text">염색</span></label>
-          <input type="checkbox" class="service-check" id="svc3" /><label class="service-label" for="svc3"><span class="svc-icon">🌀</span><span class="svc-text">펌</span></label>
-          <input type="checkbox" class="service-check" id="svc4" /><label class="service-label" for="svc4"><span class="svc-icon">💆</span><span class="svc-text">케어</span></label>
-          <input type="checkbox" class="service-check" id="svc5" /><label class="service-label" for="svc5"><span class="svc-icon">👰</span><span class="svc-text">웨딩</span></label>
-          <input type="checkbox" class="service-check" id="svc6" /><label class="service-label" for="svc6"><span class="svc-icon">🪮</span><span class="svc-text">두피관리</span></label>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="seatCount">시술석 수</label>
-        <select class="form-select" id="seatCount">
-          <option value="">선택</option>
-          <option>1석</option><option>2석</option><option>3석</option><option>4~5석</option>
-          <option>6~10석</option><option>11석 이상</option>
-        </select>
-      </div>
+      <h2 class="form-card-title">디자이너 등록</h2>
+      <p class="form-card-desc">디자이너별 아이디/비밀번호를 설정하면 스타일카드를 직접 받을 수 있어요.</p>
+      <div id="designerList"></div>
+      <button class="add-dsgn-btn" onclick="addDesigner()">+ 디자이너 추가</button>
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="prevStep(2)">← 이전</button>
-      <button class="btn btn-primary" onclick="nextStep(2)">다음 단계 →</button>
+      <button class="btn btn-primary" onclick="step2Next()">다음 단계 →</button>
     </div>
   </div>
 
-  <!-- ─── Step 3: 요금제 선택 ─── -->
+  <!-- ─── Step 3: 확인 및 저장 ─── -->
   <div class="form-step-panel" id="fstep3">
     <div class="form-card">
-      <h2 class="form-card-title">요금제 선택</h2>
-      <p class="form-card-desc">처음 30일은 어떤 요금제든 무료입니다.</p>
-
-      <div class="plan-selector">
-        <input type="radio" class="plan-radio" name="plan" id="planBasic" value="basic" />
-        <label class="plan-label" for="planBasic">
-          <span class="plan-label-icon">🌱</span>
-          <div class="plan-label-info">
-            <div class="plan-label-name">베이직</div>
-            <div class="plan-label-desc">월 예약 100건, 기본 통계</div>
-          </div>
-          <span class="plan-label-price">29,000원/월</span>
-        </label>
-
-        <input type="radio" class="plan-radio" name="plan" id="planPro" value="pro" checked />
-        <label class="plan-label" for="planPro" style="position:relative;">
-          <span class="plan-label-icon">⚡</span>
-          <div class="plan-label-info">
-            <div class="plan-label-name">프로 <span style="background:var(--rose);color:#fff;font-size:10px;padding:2px 7px;border-radius:8px;margin-left:6px;vertical-align:middle;">추천</span></div>
-            <div class="plan-label-desc">무제한 예약, 알림톡, 고급 통계</div>
-          </div>
-          <span class="plan-label-price">59,000원/월</span>
-        </label>
-
-        <input type="radio" class="plan-radio" name="plan" id="planChain" value="chain" />
-        <label class="plan-label" for="planChain">
-          <span class="plan-label-icon">🏢</span>
-          <div class="plan-label-info">
-            <div class="plan-label-name">체인 · 프랜차이즈</div>
-            <div class="plan-label-desc">멀티지점, API 연동, 전담 매니저</div>
-          </div>
-          <span class="plan-label-price">문의</span>
-        </label>
-      </div>
-
-      <div style="background:var(--cream);border-radius:var(--radius-sm);padding:14px 16px;margin-top:20px;font-size:13px;color:var(--sub);line-height:1.65;">
-        ✅ 처음 30일은 무료<br>
-        ✅ 카드 등록 없이 시작 가능<br>
-        ✅ 언제든지 해지 가능 (최소 계약 없음)
-      </div>
-
-      <div class="form-group" style="margin-top:20px;">
-        <label for="joinMemo">추가 문의사항 (선택)</label>
-        <textarea class="wizard-textarea" id="joinMemo" rows="3" placeholder="궁금한 점이나 특별한 요청이 있으시면 적어주세요."></textarea>
-      </div>
+      <h2 class="form-card-title">등록 정보 확인</h2>
+      <p class="form-card-desc">아래 내용으로 등록합니다.</p>
+      <div id="confirmSummary"></div>
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="prevStep(3)">← 이전</button>
-      <button class="btn btn-primary" onclick="submitForm()">신청 완료하기</button>
+      <button class="btn btn-primary" onclick="submitForm()">저장 완료 ✓</button>
     </div>
   </div>
 
   <!-- ─── Complete ─── -->
-  <div class="form-step-panel" id="fcomplete" style="text-align:center;">
+  <div class="form-step-panel" id="fcomplete" style="text-align:center;display:none;">
     <div style="background:var(--white);border-radius:var(--radius-lg);padding:48px 32px;border:1.5px solid var(--border);">
       <div style="font-size:56px;margin-bottom:20px;">🎉</div>
-      <h2 class="serif" style="font-size:24px;margin-bottom:12px;">등록 신청이 완료됐습니다!</h2>
-      <p style="font-size:14px;color:var(--sub);line-height:1.75;margin-bottom:32px;">
-        담당자가 1영업일 내 검토 후 승인 연락을 드립니다.<br>
-        등록하신 이메일로 확인 메일이 발송됩니다.
+      <h2 class="serif" style="font-size:24px;margin-bottom:12px;">등록 완료!</h2>
+      <p style="font-size:14px;color:var(--sub);line-height:1.75;margin-bottom:8px;" id="completeSalonName"></p>
+      <p style="font-size:13px;color:var(--sub);line-height:1.75;margin-bottom:32px;">
+        이제 고객이 스타일카드를 작성할 때 이 미용실을 선택할 수 있어요.<br>
+        디자이너는 <a href="designer.html" style="color:var(--rose)">디자이너 포털</a>에서 카드를 확인할 수 있습니다.
       </p>
       <div style="display:flex;flex-direction:column;gap:10px;max-width:260px;margin:0 auto;">
-        <a href="for-salon.html" class="btn btn-primary">사장님 페이지 보기</a>
-        <a href="index.html" class="btn btn-secondary">메인으로 가기</a>
+        <a href="designer.html" class="btn btn-primary">디자이너 포털 →</a>
+        <a href="for-salon.html" class="btn btn-secondary">사장님 페이지</a>
       </div>
     </div>
   </div>
@@ -234,7 +208,47 @@
 
 <script>
 let currentStep = 1;
+let designers = [{ name: '', loginId: '', password: '' }];
 
+/* ── 디자이너 렌더 ── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderDesigners() {
+  document.getElementById('designerList').innerHTML = designers.map((d, i) => `
+    <div class="dsgn-row">
+      <div class="dsgn-row-hd">
+        <span class="dsgn-num">디자이너 ${i + 1}</span>
+        ${designers.length > 1
+          ? `<button class="dsgn-rm" onclick="rmDesigner(${i})">삭제</button>`
+          : ''}
+      </div>
+      <input class="form-input" type="text" placeholder="이름 (예: 김지수)"
+        value="${esc(d.name)}" oninput="designers[${i}].name=this.value" />
+      <div class="dsgn-cred-row">
+        <input class="form-input" type="text" placeholder="아이디 (예: jisu)"
+          value="${esc(d.loginId)}" oninput="designers[${i}].loginId=this.value"
+          style="flex:1" autocomplete="off" />
+        <div class="pw-wrap" style="flex:1">
+          <input class="form-input" type="text" placeholder="비밀번호 (예: jisu1234)"
+            value="${esc(d.password)}" oninput="designers[${i}].password=this.value"
+            id="dpw${i}" style="width:100%;padding-right:40px;box-sizing:border-box" autocomplete="off" />
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function addDesigner() {
+  designers.push({ name: '', loginId: '', password: '' });
+  renderDesigners();
+}
+function rmDesigner(i) {
+  designers.splice(i, 1);
+  renderDesigners();
+}
+
+/* ── 진행 상태 ── */
 function updateProgress(step) {
   document.querySelectorAll('.progress-step').forEach(s => {
     const sn = parseInt(s.dataset.step);
@@ -245,67 +259,107 @@ function updateProgress(step) {
   document.getElementById('pline2').classList.toggle('done', step > 2);
 }
 
-function nextStep(from) {
-  if (from === 1) {
-    if (!document.getElementById('salonName').value.trim()) { alert('미용실 상호명을 입력해주세요.'); return; }
-    if (!document.getElementById('ownerName').value.trim()) { alert('대표자 이름을 입력해주세요.'); return; }
-    if (!document.getElementById('ownerPhone').value.trim()) { alert('연락처를 입력해주세요.'); return; }
-    if (!document.getElementById('ownerEmail').value.trim()) { alert('이메일을 입력해주세요.'); return; }
-  }
-  if (from === 2) {
-    if (!document.getElementById('salonAddr').value.trim()) { alert('주소를 입력해주세요.'); return; }
-    const checked = document.querySelectorAll('.service-check:checked');
-    if (checked.length === 0) { alert('제공 서비스를 하나 이상 선택해주세요.'); return; }
-  }
-  document.getElementById('fstep' + from).classList.remove('active');
-  document.getElementById('fstep' + (from + 1)).classList.add('active');
-  currentStep = from + 1;
-  updateProgress(currentStep);
+function showStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('fstep'+i).classList.toggle('active', i === n);
+  });
+  currentStep = n;
+  updateProgress(n);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function prevStep(from) {
-  document.getElementById('fstep' + from).classList.remove('active');
-  document.getElementById('fstep' + (from - 1)).classList.add('active');
-  currentStep = from - 1;
-  updateProgress(currentStep);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function prevStep(from) { showStep(from - 1); }
+
+/* ── Step 1 검증 ── */
+function step1Next() {
+  const name = document.getElementById('salonName').value.trim();
+  const addr = document.getElementById('salonAddr').value.trim();
+  const phone = document.getElementById('salonPhone').value.trim();
+  if (!name)  { alert('미용실 이름을 입력해주세요.'); return; }
+  if (!addr)  { alert('주소를 입력해주세요.'); return; }
+  if (!phone) { alert('전화번호를 입력해주세요.'); return; }
+  showStep(2);
 }
 
+/* ── Step 2 검증 ── */
+function step2Next() {
+  const valid = designers.filter(d => d.name.trim() && d.loginId.trim() && d.password.trim());
+  if (valid.length === 0) {
+    alert('디자이너를 최소 1명 등록해주세요.\n이름, 아이디, 비밀번호를 모두 입력해야 합니다.');
+    return;
+  }
+  buildSummary();
+  showStep(3);
+}
+
+/* ── Step 3 요약 ── */
+function buildSummary() {
+  const name     = esc(document.getElementById('salonName').value.trim());
+  const addr     = esc(document.getElementById('salonAddr').value.trim());
+  const phone    = esc(document.getElementById('salonPhone').value.trim());
+  const naver    = document.getElementById('naverUrl').value.trim();
+  const openH    = document.getElementById('openTime').value;
+  const closeH   = document.getElementById('closeTime').value;
+  const validD   = designers.filter(d => d.name.trim() && d.loginId.trim() && d.password.trim());
+
+  document.getElementById('confirmSummary').innerHTML = `
+    <div class="summary-card">
+      <div class="summary-row"><span class="summary-key">미용실</span><span class="summary-val">${name}</span></div>
+      <div class="summary-row"><span class="summary-key">주소</span><span class="summary-val">${addr}</span></div>
+      <div class="summary-row"><span class="summary-key">전화번호</span><span class="summary-val">${phone}</span></div>
+      ${naver ? `<div class="summary-row"><span class="summary-key">네이버 URL</span><span class="summary-val">${esc(naver)}</span></div>` : ''}
+      <div class="summary-row"><span class="summary-key">영업시간</span><span class="summary-val">${openH}시 ~ ${closeH}시</span></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px;">디자이너 (${validD.length}명)</p>
+    ${validD.map(d => `
+      <div class="dsgn-summary-item">
+        <div class="dsgn-summary-name">✂️ ${esc(d.name)}</div>
+        <div class="dsgn-summary-id">아이디: ${esc(d.loginId)}</div>
+      </div>`).join('')}`;
+}
+
+/* ── 저장 ── */
 function submitForm() {
-  const plan = document.querySelector('input[name="plan"]:checked');
-  if (!plan) { alert('요금제를 선택해주세요.'); return; }
-  document.getElementById('fstep3').classList.remove('active');
-  document.getElementById('fcomplete').classList.add('active');
+  const salon = {
+    name:    document.getElementById('salonName').value.trim(),
+    address: document.getElementById('salonAddr').value.trim(),
+    phone:   document.getElementById('salonPhone').value.trim(),
+    naverUrl: document.getElementById('naverUrl').value.trim(),
+    businessHours: {
+      start: parseInt(document.getElementById('openTime').value),
+      end:   parseInt(document.getElementById('closeTime').value),
+    },
+    designers: designers
+      .filter(d => d.name.trim() && d.loginId.trim() && d.password.trim())
+      .map(d => ({ name: d.name.trim(), loginId: d.loginId.trim(), password: d.password.trim() })),
+  };
+
+  HD.saveSalon(salon);
+
+  // 완료 화면
+  [1,2,3].forEach(i => document.getElementById('fstep'+i).classList.remove('active'));
+  document.getElementById('fcomplete').style.display = 'block';
+  document.getElementById('completeSalonName').textContent =
+    `"${salon.name}" 이(가) 등록됐습니다.`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* ── 초기화 ── */
+renderDesigners();
 
 // 전화번호 자동 하이픈
-document.getElementById('ownerPhone').addEventListener('input', e => {
+document.getElementById('salonPhone').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'');
   if (v.length > 3 && v.length <= 7) v = v.slice(0,3)+'-'+v.slice(3);
   else if (v.length > 7) v = v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
   e.target.value = v;
 });
-document.getElementById('bizNumber').addEventListener('input', e => {
-  let v = e.target.value.replace(/\D/g,'');
-  if (v.length > 3 && v.length <= 5) v = v.slice(0,3)+'-'+v.slice(3);
-  else if (v.length > 5) v = v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,10);
-  e.target.value = v;
-});
-
-// URL param으로 요금제 프리셋
-const params = new URLSearchParams(location.search);
-const planParam = params.get('plan');
-if (planParam) {
-  const radio = document.getElementById('plan' + planParam.charAt(0).toUpperCase() + planParam.slice(1));
-  if (radio) radio.checked = true;
-}
 
 const hamburger = document.getElementById('hamburger'), navMenu = document.getElementById('navMenu');
 hamburger.addEventListener('click', () => navMenu.classList.toggle('open'));
 navMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navMenu.classList.remove('open')));
 </script>
+<script src="haireo-data.js"></script>
 <script src="login-modal.js"></script>
 <script src="owner-bar.js"></script>
 </body>

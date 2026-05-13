@@ -263,6 +263,58 @@
     }
     .btn-book2:hover { background:var(--rose-light); }
 
+    /* ── Step 0: 예약 정보 ── */
+    .salon-sel-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .salon-sel-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 14px;
+      border: 2px solid var(--border); background: #fff;
+      cursor: pointer; text-align: left; width: 100%;
+      font-size: 15px; font-weight: 600; color: var(--dark);
+      font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+    }
+    .salon-sel-btn.sel { border-color: var(--rose); background: var(--rose-light); }
+    .salon-sel-btn.sel .ssb-name { color: var(--rose); }
+    .ssb-icon { font-size: 22px; flex-shrink: 0; }
+    .ssb-name { font-size: 15px; font-weight: 700; }
+    .ssb-addr { font-size: 12px; color: var(--sub); margin-top: 2px; font-weight: 400; }
+    .dsgn-sel-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .dsgn-btn {
+      padding: 10px 20px; border-radius: 20px;
+      border: 2px solid var(--border); background: #fff;
+      font-size: 14px; font-weight: 700; color: var(--dark);
+      cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+    }
+    .dsgn-btn.sel { border-color: var(--rose); background: var(--rose); color: #fff; }
+    .time-sel-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+    .time-btn {
+      padding: 9px 14px; border-radius: 20px;
+      border: 2px solid var(--border); background: #fff;
+      font-size: 13px; font-weight: 700; color: var(--dark);
+      cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+    }
+    .time-btn.sel { border-color: var(--rose); background: var(--rose); color: #fff; }
+    .step0-input {
+      width: 100%; padding: 13px 14px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-size: 15px; color: var(--dark); outline: none;
+      font-family: 'Noto Sans KR', sans-serif; box-sizing: border-box;
+      margin-bottom: 16px; background: #fff;
+    }
+    .step0-input:focus { border-color: var(--rose); }
+    .skip-btn {
+      background: none; border: none; color: var(--sub);
+      font-size: 13px; cursor: pointer; padding: 4px 0;
+      font-family: 'Noto Sans KR', sans-serif; text-decoration: underline;
+    }
+    .no-salon-msg {
+      padding: 20px; background: #fff; border-radius: 14px;
+      border: 1.5px dashed var(--border); text-align: center;
+      font-size: 14px; color: var(--sub); line-height: 1.75;
+      margin-bottom: 16px;
+    }
+    .no-salon-msg a { color: var(--rose); text-decoration: none; }
+
     /* ── 토스트 ── */
     .toast {
       position:fixed; bottom:100px; left:50%;
@@ -298,11 +350,39 @@
   <!-- 진행 표시 -->
   <div class="prog">
     <div class="prog-dots">
-      <div class="prog-dot on" id="pd1"></div>
+      <div class="prog-dot on" id="pd0"></div>
+      <div class="prog-dot"    id="pd1"></div>
       <div class="prog-dot"    id="pd2"></div>
       <div class="prog-dot"    id="pd3"></div>
     </div>
-    <div class="prog-lbl" id="progLbl"><strong>1/3</strong> 성별 선택</div>
+    <div class="prog-lbl" id="progLbl"><strong>1/4</strong> 예약 정보</div>
+  </div>
+
+  <!-- ══ STEP 0 — 예약 정보 ══ -->
+  <div class="step on" id="step0">
+    <p class="step-title">어느 미용실에 가세요?</p>
+    <p class="step-hint">디자이너를 선택하면 카드가 바로 전달돼요</p>
+
+    <div id="salonSelSection">
+      <div class="slbl">미용실 선택</div>
+      <div id="salonSelWrap" class="salon-sel-wrap"></div>
+    </div>
+
+    <div id="designerSelSection" style="display:none">
+      <div class="slbl">디자이너</div>
+      <div id="designerSelWrap" class="dsgn-sel-wrap"></div>
+    </div>
+
+    <div id="timeSelSection" style="display:none">
+      <div class="slbl">예약 시간 <span style="font-size:11px;color:var(--sub);font-weight:400">(선택)</span></div>
+      <div id="timeSelWrap" class="time-sel-row"></div>
+    </div>
+
+    <div class="slbl">이름 <span style="font-size:11px;color:var(--sub);font-weight:400">(선택)</span></div>
+    <input class="step0-input" id="customerNameInput" type="text"
+      placeholder="예: 홍길동" autocomplete="name" />
+
+    <button class="skip-btn" onclick="goTo(1)">미용실 없이 진행 →</button>
   </div>
 
   <!-- ══ STEP 1 — 성별 + 사진 ══ -->
@@ -406,19 +486,23 @@
 
 <script>
 /* ══════════════════════════════════════════
-   스타일카드 — 성별 기반 3단계 위자드
+   스타일카드 — 4단계 위자드 (step0: 예약정보)
 ══════════════════════════════════════════ */
 
 /* ── URL 파라미터 ── */
-const params   = new URLSearchParams(location.search);
-const SALON_NAME = params.get('salon') || '';
-const BOOKING_URL = SALON_NAME
-  ? `booking.html?salon=${encodeURIComponent(SALON_NAME)}`
+const params     = new URLSearchParams(location.search);
+const URL_SALON  = params.get('salon') || '';
+const BOOKING_URL = URL_SALON
+  ? `booking.html?salon=${encodeURIComponent(URL_SALON)}`
   : 'booking.html';
 
 /* ── 상태 ── */
-const S = { gender: null, photos: [], styles: [], color: null };
-let curStep = 1;
+const S = {
+  salonId: null, salonName: URL_SALON, designerLoginId: null,
+  designerName: null, appointmentTime: null, customerName: '',
+  gender: null, photos: [], styles: [], color: null,
+};
+let curStep = 0;
 
 /* ── 데이터 ── */
 const KW = {
@@ -452,11 +536,6 @@ const COLORS = ['블랙','다크브라운','브라운','애쉬','골든','핑크
 
 /* ── 초기 렌더 ── */
 (function init() {
-  // 미용실 배지
-  if (SALON_NAME) {
-    document.getElementById('salonChip').style.display = 'inline-flex';
-    document.getElementById('salonChipName').textContent = SALON_NAME;
-  }
   // 색상 칩 빌드
   const cr = document.getElementById('colorRow');
   COLORS.forEach(col => {
@@ -469,8 +548,104 @@ const COLORS = ['블랙','다크브라운','브라운','애쉬','골든','핑크
     };
     cr.appendChild(c);
   });
+
+  // Step 0 초기화
+  buildSalonBtns();
   updateNav();
 })();
+
+/* ── Step 0: 살롱/디자이너/시간 선택 ── */
+function buildSalonBtns() {
+  const wrap = document.getElementById('salonSelWrap');
+  const salons = (typeof HD !== 'undefined') ? HD.getSalons() : [];
+
+  if (!salons.length) {
+    wrap.innerHTML = `<div class="no-salon-msg">
+      아직 등록된 미용실이 없어요.<br>
+      <a href="salon-join.html">미용실 등록하기 →</a>
+    </div>`;
+    // URL param 살롱이 있으면 배지 표시
+    if (URL_SALON) {
+      document.getElementById('salonChip').style.display = 'inline-flex';
+      document.getElementById('salonChipName').textContent = URL_SALON;
+    }
+    return;
+  }
+
+  // URL param으로 매칭 시도
+  let preMatch = null;
+  if (URL_SALON) {
+    preMatch = salons.find(s => s.name === URL_SALON);
+  }
+
+  wrap.innerHTML = salons.map(s => `
+    <button class="salon-sel-btn${preMatch && preMatch.id === s.id ? ' sel' : ''}"
+      onclick="selectSalon('${s.id}')" data-sid="${s.id}">
+      <span class="ssb-icon">💈</span>
+      <div>
+        <div class="ssb-name">${esc(s.name)}</div>
+        ${s.address ? `<div class="ssb-addr">${esc(s.address)}</div>` : ''}
+      </div>
+    </button>`).join('');
+
+  if (preMatch) {
+    S.salonId = preMatch.id;
+    S.salonName = preMatch.name;
+    document.getElementById('salonChip').style.display = 'inline-flex';
+    document.getElementById('salonChipName').textContent = preMatch.name;
+    buildDesignerBtns(preMatch);
+  }
+}
+
+function selectSalon(sid) {
+  const salons = (typeof HD !== 'undefined') ? HD.getSalons() : [];
+  const salon = salons.find(s => s.id === sid);
+  if (!salon) return;
+  S.salonId = salon.id;
+  S.salonName = salon.name;
+  S.designerLoginId = null;
+  S.designerName = null;
+  S.appointmentTime = null;
+  document.querySelectorAll('.salon-sel-btn').forEach(b => b.classList.toggle('sel', b.dataset.sid === sid));
+  document.getElementById('salonChip').style.display = 'inline-flex';
+  document.getElementById('salonChipName').textContent = salon.name;
+  buildDesignerBtns(salon);
+}
+
+function buildDesignerBtns(salon) {
+  const sec = document.getElementById('designerSelSection');
+  const wrap = document.getElementById('designerSelWrap');
+  const designers = salon.designers || [];
+  if (!designers.length) { sec.style.display = 'none'; buildTimeBtns(); return; }
+  sec.style.display = 'block';
+  wrap.innerHTML = designers.map(d => `
+    <button class="dsgn-btn" onclick="selectDesigner('${esc(d.loginId)}','${esc(d.name)}')"
+      data-did="${esc(d.loginId)}">${esc(d.name)}</button>`).join('');
+  buildTimeBtns();
+}
+
+function selectDesigner(loginId, name) {
+  S.designerLoginId = loginId;
+  S.designerName = name;
+  document.querySelectorAll('.dsgn-btn').forEach(b =>
+    b.classList.toggle('sel', b.dataset.did === loginId));
+}
+
+function buildTimeBtns() {
+  const sec = document.getElementById('timeSelSection');
+  const wrap = document.getElementById('timeSelWrap');
+  sec.style.display = 'block';
+  const hours = [10,11,12,13,14,15,16,17,18,19,20,21];
+  wrap.innerHTML = hours.map(h => `
+    <button class="time-btn" onclick="selectTime('${h}:00')" data-t="${h}:00">${h}시</button>
+  `).join('');
+}
+
+function selectTime(t) {
+  S.appointmentTime = S.appointmentTime === t ? null : t;
+  document.querySelectorAll('.time-btn').forEach(b =>
+    b.classList.toggle('sel', b.dataset.t === t));
+}
 
 /* ── 성별 선택 ── */
 function setGender(g) {
@@ -535,7 +710,7 @@ function today() {
 }
 function buildCardHTML() {
   const note = document.getElementById('freeText')?.value.trim() || '';
-  const salonDisplay = SALON_NAME || '미용실';
+  const salonDisplay = S.salonName || '미용실';
   const tags = [...S.styles, ...(S.color ? [S.color] : [])];
   const tagsHTML = tags.map(t => `<span class="ctag">#${t}</span>`).join('');
   return `
@@ -547,6 +722,8 @@ function buildCardHTML() {
       </div>
     </div>
     <div class="card-body">
+      ${S.designerName ? `<div class="card-row"><span class="ckey">디자이너</span><span class="cval">${esc(S.designerName)}</span></div>` : ''}
+      ${S.appointmentTime ? `<div class="card-row"><span class="ckey">예약 시간</span><span class="cval">${esc(S.appointmentTime)}</span></div>` : ''}
       <div class="card-row"><span class="ckey">성별</span><span class="cval">${S.gender || '미선택'}</span></div>
       <div class="card-row"><span class="ckey">스타일</span><span class="cval">${S.styles.join(' · ') || '미선택'}</span></div>
       ${S.color ? `<div class="card-row"><span class="ckey">색상</span><span class="cval">${S.color}</span></div>` : ''}
@@ -561,12 +738,24 @@ function refreshCard() {
 /* ── 전체화면 ── */
 function buildFcHTML() {
   const note = document.getElementById('freeText')?.value.trim() || '';
-  const salonDisplay = SALON_NAME || '';
+  const salonDisplay = S.salonName || '';
   const tags = [...S.styles, ...(S.color ? [S.color] : [])];
   return `
     ${salonDisplay ? `<div class="fc-salon">${esc(salonDisplay)}</div>` : ''}
     <div class="fc-salon-sub">${salonDisplay ? '에서 사용할 스타일카드예요' : '헤어이어 스타일카드'}</div>
     <div class="fc-divider"></div>
+    ${S.designerName ? `
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">담당 디자이너</div>
+      <div class="fc-sec-val">${esc(S.designerName)}</div>
+    </div>
+    <div class="fc-divider"></div>` : ''}
+    ${S.appointmentTime ? `
+    <div class="fc-sec">
+      <div class="fc-sec-lbl">예약 시간</div>
+      <div class="fc-sec-val">${esc(S.appointmentTime)}</div>
+    </div>
+    <div class="fc-divider"></div>` : ''}
     ${S.gender ? `
     <div class="fc-sec">
       <div class="fc-sec-lbl">성별</div>
@@ -595,9 +784,28 @@ function buildFcHTML() {
     <div class="fc-date">${today()}</div>`;
 }
 function openFc() {
+  const note = document.getElementById('freeText')?.value.trim() || '';
   document.getElementById('fcBody').innerHTML = buildFcHTML();
   document.getElementById('fcEl').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // 디자이너에게 전달 (localStorage 저장)
+  if (typeof HD !== 'undefined' && S.designerLoginId) {
+    HD.saveCard({
+      salonId: S.salonId,
+      salonName: S.salonName,
+      designerLoginId: S.designerLoginId,
+      designerName: S.designerName,
+      appointmentTime: S.appointmentTime,
+      customerName: S.customerName,
+      gender: S.gender,
+      photos: S.photos,
+      styles: S.styles,
+      color: S.color,
+      freeText: note,
+    });
+    setTimeout(() => toast(`${S.designerName}님께 카드가 전달됐어요 ✨`), 400);
+  }
 }
 function closeFc() {
   document.getElementById('fcEl').classList.remove('open');
@@ -607,9 +815,10 @@ function closeFc() {
 /* ── 공유 ── */
 function buildShareText() {
   const note = document.getElementById('freeText')?.value.trim() || '';
-  const salonDisplay = SALON_NAME || '';
   const lines = ['✂ 헤어이어 스타일카드', ''];
-  if (salonDisplay) lines.push(`미용실: ${salonDisplay}`);
+  if (S.salonName) lines.push(`미용실: ${S.salonName}`);
+  if (S.designerName) lines.push(`디자이너: ${S.designerName}`);
+  if (S.appointmentTime) lines.push(`예약 시간: ${S.appointmentTime}`);
   if (S.gender) lines.push(`성별: ${S.gender}`);
   if (S.styles.length) lines.push(`스타일: ${S.styles.join(', ')}`);
   if (S.color) lines.push(`색상: ${S.color}`);
@@ -638,11 +847,15 @@ function shareNative() {
 
 /* ── 네비게이션 ── */
 function nextStep() {
+  if (curStep === 0) {
+    S.customerName = (document.getElementById('customerNameInput').value || '').trim();
+    goTo(1); return;
+  }
   if (curStep === 1 && !S.gender) return toast('성별을 먼저 선택해주세요');
   if (curStep < 3) goTo(curStep + 1);
 }
 function prevStep() {
-  if (curStep > 1) goTo(curStep - 1);
+  if (curStep > 0) goTo(curStep - 1);
   else history.back();
 }
 function goTo(n) {
@@ -655,10 +868,10 @@ function goTo(n) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function updateNav() {
-  [1,2,3].forEach(i => document.getElementById('pd'+i).classList.toggle('on', i <= curStep));
-  const lbls = ['성별 선택','스타일 키워드','요청사항 & 카드'];
-  document.getElementById('progLbl').innerHTML = `<strong>${curStep}/3</strong> ${lbls[curStep-1]}`;
-  document.getElementById('btnBack').style.visibility = curStep === 1 ? 'hidden' : 'visible';
+  [0,1,2,3].forEach(i => document.getElementById('pd'+i).classList.toggle('on', i <= curStep));
+  const lbls = ['예약 정보','성별 선택','스타일 키워드','요청사항 & 카드'];
+  document.getElementById('progLbl').innerHTML = `<strong>${curStep+1}/4</strong> ${lbls[curStep]}`;
+  document.getElementById('btnBack').style.visibility = curStep === 0 ? 'hidden' : 'visible';
   document.getElementById('btnNext').textContent = curStep === 2 ? '완성하기 ✨' : '다음';
   document.getElementById('navBtns').style.display = curStep === 3 ? 'none' : 'flex';
 }
@@ -684,6 +897,7 @@ ham.addEventListener('click', () => nm.classList.toggle('open'));
 nm.querySelectorAll('a').forEach(l => l.addEventListener('click', () => nm.classList.remove('open')));
 </script>
 
+<script src="haireo-data.js"></script>
 <script src="login-modal.js"></script>
 <script src="owner-bar.js"></script>
 </body>
