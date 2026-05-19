@@ -620,10 +620,8 @@
 
       el.addEventListener('click', function (e) {
         e.stopPropagation();
-        openInfo(p, pos, i);
+        showSelectedSalon(p, i);
         map.panTo(pos);
-        var card = document.getElementById('card-' + i);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     });
   }
@@ -634,74 +632,62 @@
   }
   window.closeInfo = closeInfo;
 
-  function openInfo(p, pos, i) {
-    closeInfo();
-
+  /* ── 핀 클릭 → 하단 패널 상세 뷰 ── */
+  function showSelectedSalon(p, i) {
     var dist   = p.distance ? fmtDist(p.distance) : '-';
     var rating = ratingOf(p.id);
     var avail  = availOf(p.id, i);
-    var bdStyle =
-      avail === 'available'
-        ? 'background:rgba(76,175,130,.12);color:#2D8C5E;border:1px solid rgba(76,175,130,.3)'
-        : avail === 'soon'
-          ? 'background:rgba(232,168,56,.12);color:#B07A18;border:1px solid rgba(232,168,56,.3)'
-          : 'background:rgba(217,92,92,.08);color:#B04040;border:1px solid rgba(217,92,92,.2)';
-    var bdTxt = avail === 'available' ? '빈자리 있음'
-              : avail === 'soon'      ? '마감임박' : '마감';
+    var stars  = rating >= 4.7 ? '★★★★★' : '★★★★☆';
+    var bdCls  = avail === 'available' ? 'bd-avail' : avail === 'soon' ? 'bd-soon' : 'bd-full';
+    var bdTxt  = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
+    var emoji  = EMOJIS[i % EMOJIS.length];
 
-    var naverHref = 'https://map.naver.com/v5/search/' +
-      encodeURIComponent(p.place_name + ' 미용실');
-    var idNaver = 'naver-btn-' + i;
-    var idClose = 'close-btn-' + i;
+    var body = document.getElementById('panelBody');
+    body.innerHTML =
+      '<div style="padding:2px 0 14px">' +
+        '<button id="btn-back-list" style="background:none;border:none;color:#C4725A;' +
+          'font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit">' +
+          '← 전체 목록' +
+        '</button>' +
+      '</div>' +
+      '<div style="background:#fff;border:1.5px solid #E8E0D8;border-radius:14px;padding:18px 16px 20px">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
+          '<div style="width:52px;height:52px;border-radius:10px;background:#F2E8E4;' +
+            'display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">' +
+            emoji +
+          '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:16px;font-weight:700;color:#2D2D2D;margin-bottom:5px;' +
+              'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+              esc(p.place_name) +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#7A7A7A">' +
+              '<span style="color:#F5A623">' + stars + '</span>' +
+              '<span>' + rating + '</span>' +
+              '<span>·</span>' +
+              '<span>' + dist + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:16px"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
+        '<button id="btn-naver-selected" style="display:block;width:100%;background:#C4725A;' +
+          'color:#fff;font-size:15px;font-weight:700;padding:14px;border-radius:12px;' +
+          'border:none;cursor:pointer;font-family:inherit;letter-spacing:-0.3px">' +
+          '네이버에서 예약하기 →' +
+        '</button>' +
+      '</div>';
 
-    var el = document.createElement('div');
-    el.style.cssText =
-      'background:#fff;border-radius:14px;' +
-      'box-shadow:0 6px 24px rgba(0,0,0,0.15);' +
-      'padding:14px 16px 13px;min-width:178px;' +
-      "font-family:'Noto Sans KR',sans-serif;position:relative";
-
-    el.innerHTML =
-      '<button id="' + idClose + '" style="' +
-        'position:absolute;top:9px;right:9px;background:#F2E8E4;border:none;' +
-        'border-radius:50%;width:23px;height:23px;font-size:11px;color:#7A7A7A;' +
-        'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0' +
-      '">✕</button>' +
-      '<div style="font-size:14px;font-weight:700;color:#2D2D2D;' +
-        'margin-bottom:7px;padding-right:28px;line-height:1.3">' + esc(p.place_name) + '</div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px;color:#7A7A7A;margin-bottom:3px">' +
-        '<span>거리</span><span style="color:#2D2D2D;font-weight:600">' + dist + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px;color:#7A7A7A;margin-bottom:7px">' +
-        '<span>별점</span><span style="color:#F5A623;font-weight:600">★ ' + rating + '</span></div>' +
-      '<div style="' + bdStyle + ';font-size:11px;font-weight:700;' +
-        'padding:3px 9px;border-radius:8px;display:inline-block;margin-bottom:9px">' + bdTxt + '</div>' +
-      '<button id="' + idNaver + '" style="display:block;width:100%;background:#C4725A;' +
-        'color:#fff;font-size:13px;font-weight:700;padding:8px;border-radius:9px;' +
-        "text-align:center;cursor:pointer;border:none;font-family:'Noto Sans KR',sans-serif" +
-      '">네이버에서 예약하기 →</button>';
-
-    infoOv = new kakao.maps.CustomOverlay({
-      position: pos, content: el, yAnchor: 1.12, zIndex: 10
+    /* 일반 DOM → addEventListener 바로 동작 */
+    document.getElementById('btn-naver-selected').addEventListener('click', function () {
+      var url = 'https://map.naver.com/v5/search/' +
+        encodeURIComponent(p.place_name + ' 미용실');
+      window.open(url, '_blank');
     });
-    infoOv.setMap(map);
+    document.getElementById('btn-back-list').addEventListener('click', function () {
+      renderCards(_pinData);
+    });
 
-    /* Kakao SDK가 DOM에 오버레이를 삽입한 뒤 이벤트 바인딩 */
-    setTimeout(function () {
-      var btnNaver = document.getElementById(idNaver);
-      var btnClose = document.getElementById(idClose);
-      if (btnNaver) {
-        btnNaver.addEventListener('click', function (e) {
-          e.stopPropagation();
-          window.open(naverHref, '_blank');
-        });
-      }
-      if (btnClose) {
-        btnClose.addEventListener('click', function (e) {
-          e.stopPropagation();
-          closeInfo();
-        });
-      }
-    }, 100);
+    document.getElementById('panel').classList.add('expanded');
   }
 
   /* ── 카드 리스트 ── */
