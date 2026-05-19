@@ -620,9 +620,10 @@
 
       el.addEventListener('click', function (e) {
         e.stopPropagation();
-        openInfo(p, pos, i);
+        var url = 'https://map.naver.com/v5/search/' +
+          encodeURIComponent(p.place_name + ' 미용실');
+        window.open(url, '_blank');
         map.panTo(pos);
-        /* 해당 카드로 패널 스크롤 */
         var card = document.getElementById('card-' + i);
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
@@ -724,11 +725,8 @@
       var bdCls  = avail === 'available' ? 'bd-avail' : avail === 'soon' ? 'bd-soon' : 'bd-full';
       var bdTxt  = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
       var emoji  = EMOJIS[i % EMOJIS.length];
-
-      var nUrl = naverUrl(p);
       return (
-        '<div class="s-card" id="card-' + i + '"' +
-          ' onclick="window.open(\'' + nUrl + '\',\'_blank\')">' +
+        '<div class="s-card" id="card-' + i + '" style="cursor:pointer">' +
           '<div class="s-thumb">' + emoji + '</div>' +
           '<div class="s-info">' +
             '<div class="s-row1">' +
@@ -740,12 +738,22 @@
               '<span class="s-rating">' + rating + '</span>' +
             '</div>' +
             '<div class="s-row3"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
-            '<a class="s-naver-btn" href="' + nUrl + '" target="_blank"' +
-              ' onclick="event.stopPropagation()">네이버에서 예약하기 →</a>' +
+            '<span class="s-naver-btn">네이버에서 예약하기 →</span>' +
           '</div>' +
         '</div>'
       );
     }).join('');
+
+    /* innerHTML 빌드 완료 후 addEventListener 바인딩 */
+    places.forEach(function (p, i) {
+      var card = document.getElementById('card-' + i);
+      if (!card) return;
+      card.addEventListener('click', function () {
+        var url = 'https://map.naver.com/v5/search/' +
+          encodeURIComponent(p.place_name + ' 미용실');
+        window.open(url, '_blank');
+      });
+    });
   }
 
   /* ── GPS 버튼 ── */
