@@ -263,7 +263,20 @@
       border: 1px solid rgba(217,92,92,.2);
       font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
     }
-    .s-arrow { color: var(--border); font-size: 20px; flex-shrink: 0; }
+    .s-naver-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 13px;
+      border-radius: 20px;
+      background: var(--rose);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .s-naver-btn:hover { background: var(--rose-dark); }
 
     /* 로딩 / 빈 상태 */
     .state-wrap {
@@ -457,6 +470,11 @@
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function naverUrl(p) {
+    var url = (p && p.place_url) ? p.place_url : null;
+    if (url && url.indexOf('naver') !== -1) return url;
+    return 'https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name);
   }
 
   /* ── 지도 초기화 ── */
@@ -667,10 +685,10 @@
       '</div>' +
 
       /* 예약 버튼 */
-      '<a href="booking.html?salon=' + encodeURIComponent(p.place_name) + '" ' +
+      '<a href="' + naverUrl(p) + '" target="_blank" ' +
         'style="display:block;background:#C4725A;color:#fff;font-size:13px;' +
         'font-weight:700;padding:8px;border-radius:9px;text-align:center;' +
-        "text-decoration:none;font-family:'Noto Sans KR',sans-serif"+'">예약하기 →</a>';
+        "text-decoration:none;font-family:'Noto Sans KR',sans-serif"+'">네이버에서 예약하기 →</a>';
 
     infoOv = new kakao.maps.CustomOverlay({
       position: pos, content: el, yAnchor: 1.12, zIndex: 10
@@ -694,9 +712,10 @@
       var bdTxt  = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
       var emoji  = EMOJIS[i % EMOJIS.length];
 
+      var nUrl = naverUrl(p);
       return (
         '<div class="s-card" id="card-' + i + '"' +
-          ' onclick="location.href=\'booking.html?salon=' + encodeURIComponent(p.place_name) + '\'">' +
+          ' onclick="window.open(\'' + nUrl + '\',\'_blank\')">' +
           '<div class="s-thumb">' + emoji + '</div>' +
           '<div class="s-info">' +
             '<div class="s-row1">' +
@@ -708,8 +727,9 @@
               '<span class="s-rating">' + rating + '</span>' +
             '</div>' +
             '<div class="s-row3"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
+            '<a class="s-naver-btn" href="' + nUrl + '" target="_blank"' +
+              ' onclick="event.stopPropagation()">네이버에서 예약하기 →</a>' +
           '</div>' +
-          '<span class="s-arrow">›</span>' +
         '</div>'
       );
     }).join('');
