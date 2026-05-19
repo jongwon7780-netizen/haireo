@@ -447,8 +447,9 @@
   /* ── 전역 상태 ── */
   var map, infoOv;
   var pinOvs      = [];
-  var myDotOv     = null;   // 내 위치 파란 원 (재검색 시 유지)
-  var mapMoveTimer = null;  // zoom_changed 디바운스 타이머
+  var myDotOv     = null;
+  var mapMoveTimer = null;
+  var _pinData    = [];
 
   var EMOJIS  = ['✂️','💇','🪮','💈','🌸','🌿','✨','🎀','🍀','🪷'];
   var RATINGS = [4.8, 4.6, 4.9, 4.5, 4.7, 4.4, 4.8, 4.3, 4.6, 4.5];
@@ -476,6 +477,11 @@
     if (url && url.indexOf('naver') !== -1) return url;
     return 'https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name);
   }
+  window.openNaverPlace = function (idx) {
+    var p = _pinData[idx];
+    if (!p) return;
+    window.open(naverUrl(p), '_blank');
+  };
 
   /* ── 지도 초기화 ── */
   kakao.maps.load(function () {
@@ -575,6 +581,7 @@
       var r    = await fetch(url);
       var data = await r.json();
       var places = (data.documents || []);
+      _pinData = places;
       renderPins(places);
       renderCards(places);
       document.getElementById('locCount').textContent = places.length
@@ -685,10 +692,10 @@
       '</div>' +
 
       /* 예약 버튼 */
-      '<a href="' + naverUrl(p) + '" target="_blank" ' +
-        'style="display:block;background:#C4725A;color:#fff;font-size:13px;' +
+      '<button onclick="window.openNaverPlace(' + i + ')" ' +
+        'style="display:block;width:100%;background:#C4725A;color:#fff;font-size:13px;' +
         'font-weight:700;padding:8px;border-radius:9px;text-align:center;' +
-        "text-decoration:none;font-family:'Noto Sans KR',sans-serif"+'">네이버에서 예약하기 →</a>';
+        "cursor:pointer;border:none;font-family:'Noto Sans KR',sans-serif"+'">네이버에서 예약하기 →</button>';
 
     infoOv = new kakao.maps.CustomOverlay({
       position: pos, content: el, yAnchor: 1.12, zIndex: 10
