@@ -423,11 +423,27 @@
   </div>
 </main>
 
-<!-- 카카오 지도 JS SDK (autoload=false → kakao.maps.load로 타이밍 제어) -->
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e4e580287e144cfed4c34509ce1858d9&autoload=false"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- 카카오 Maps SDK: /api/config 에서 KAKAO_JS_KEY 를 받아 동적 로드 -->
 <script>
+(async function bootMap() {
+  /* ── SDK 동적 로드 ── */
+  try {
+    var _cfg = await fetch('/api/config').then(function (r) { return r.json(); });
+    var _key  = (_cfg && _cfg.kakaoJsKey) ? _cfg.kakaoJsKey : '';
+    if (!_key) { console.warn('[Kakao Maps] KAKAO_JS_KEY 미설정 — .env 확인'); return; }
+    await new Promise(function (res, rej) {
+      var s  = document.createElement('script');
+      s.src  = '//dapi.kakao.com/v2/maps/sdk.js?appkey=' + _key + '&autoload=false';
+      s.onload  = res;
+      s.onerror = function () { rej(new Error('Kakao SDK 로드 실패')); };
+      document.head.appendChild(s);
+    });
+  } catch (e) {
+    console.warn('[Kakao Maps] 초기화 실패:', e);
+    var mapEl = document.getElementById('map');
+    if (mapEl) mapEl.style.background = '#f0f0f0';
+    return;
+  }
   /* ── 전역 상태 ── */
   var map, infoOv;
   var pinOvs      = [];
@@ -875,15 +891,13 @@
       String(d.getDate()).padStart(2,'0');
   })();
 
-  (async function initFirebaseIndex() {
-    try {
-      var cfg = await fetch('/api/firebase-config').then(function(r){ return r.json(); });
-      if (!cfg.projectId) return;
-      if (!firebase.apps.length) firebase.initializeApp(cfg);
-      fsDb = firebase.firestore();
-      listenFirestoreSalons();
-    } catch(e) { /* Firebase 미설정 시 Kakao만 사용 */ }
-  })();
+  /* Firebase → Supabase 마이그레이션 후 supabase-client.js의 SB 메서드로 교체 */
+  // (async function initSupabaseIndex() {
+  //   try {
+  //     const salons = await SB.getSalons();
+  //     salons.forEach(function(s) { if (s.lat && s.lng) addSalonPin(s); });
+  //   } catch(e) { console.warn('[Supabase] 살롱 로드 실패:', e); }
+  // })();
 
   function listenFirestoreSalons() {
     if (fsUnsubSalons) fsUnsubSalons();
@@ -962,6 +976,7 @@
   navMenu.querySelectorAll('a').forEach(function (l) {
     l.addEventListener('click', function () { navMenu.classList.remove('open'); });
   });
+})(); // bootMap
 </script>
 
 <script src="login-modal.js"></script>
