@@ -389,6 +389,8 @@
 
 <!-- 카카오 Maps SDK -->
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e4e580287e144cfed4c34509ce1858d9&autoload=false"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
 <script>
 (function bootMap() {
   if (typeof kakao === 'undefined') {
@@ -409,6 +411,22 @@
   var REVIEWS      = [124, 87, 203, 56, 142, 91, 178, 63, 119, 88];
   var BADGE_COLORS = ['#C4725A','#4CAF82','#7B68EE','#E08C4A','#3B82F6',
                       '#EC4899','#14B8A6','#F97316','#84CC16','#8B5CF6'];
+
+  /* ── 조회 추적 ── */
+  function trackEvent(salonName, eventType) {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ salon_name: salonName, event_type: eventType })
+    }).catch(function(){});
+  }
+
+  /* ── 파트너 살롱 상태 ── */
+  var _partnerSalons = [];
+  var _todayStr = (function() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  })();
 
   /* ── 헬퍼 ── */
   function ratingOf(id)     { return RATINGS [(Math.abs(parseInt(id,10)||0))     % RATINGS.length]; }
@@ -443,6 +461,7 @@
       mapMoveTimer = setTimeout(function () { hideReSearchBtn(); reSearchFromCenter(); }, 700);
     });
     requestGPS();
+    loadPartnerSalons();
   });
 
   /* ── GPS ── */
@@ -529,6 +548,7 @@
 
   /* ── 상세 패널 ── */
   function showSelectedSalon(p, i) {
+    trackEvent(p.place_name, 'view');
     var dist   = p.distance ? fmtDist(p.distance) : '-';
     var rating = ratingOf(p.id);
     var review = reviewOf(p.id, i);
@@ -586,6 +606,7 @@
       '</div>';
 
     document.getElementById('btn-naver-selected').addEventListener('click', function() {
+      trackEvent(p.place_name, 'naver_click');
       window.open('https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name + ' 미용실'), '_blank');
     });
     document.getElementById('btn-back-list').addEventListener('click', function() {
@@ -597,11 +618,32 @@
   /* ── 카드 리스트 ── */
   function renderCards(places) {
     var body = document.getElementById('panelBody');
-    if (!places.length) {
+    if (!places.length && !_partnerSalons.length) {
       body.innerHTML = '<div class="state-wrap"><span>주변에 미용실이 없어요</span></div>';
       return;
     }
-    body.innerHTML = places.map(function(p, i) {
+
+    var partnerHtml = _partnerSalons.map(function(s, pi) {
+      var avail = s._avail || 'available';
+      var bdCls = avail === 'available' ? 'bd-avail' : avail === 'soon' ? 'bd-soon' : 'bd-full';
+      var bdTxt = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
+      var char  = esc((s.name || '?').charAt(0));
+      return (
+        '<div class="s-card" id="pcard-' + pi + '" style="border-color:#C4725A;border-width:1.5px">' +
+          '<div class="s-badge" style="background:#C4725A">' + char + '</div>' +
+          '<div class="s-info">' +
+            '<div class="s-row1">' +
+              '<span class="s-name">' + esc(s.name) + '</span>' +
+              '<span style="font-size:10px;color:#C4725A;font-weight:700;white-space:nowrap">★ 파트너</span>' +
+            '</div>' +
+            (s.address ? '<div class="s-addr">' + esc(s.address) + '</div>' : '') +
+            '<div class="s-row3"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    body.innerHTML = partnerHtml + places.map(function(p, i) {
       var dist   = p.distance ? fmtDist(p.distance) : '-';
       var rating = ratingOf(p.id);
       var review = reviewOf(p.id, i);
@@ -633,6 +675,11 @@
       );
     }).join('');
 
+    _partnerSalons.forEach(function(s, pi) {
+      var card = document.getElementById('pcard-' + pi);
+      if (!card) return;
+      card.addEventListener('click', function() { showPartnerSalon(s); });
+    });
     places.forEach(function(p, i) {
       var card = document.getElementById('card-' + i);
       if (!card) return;
@@ -740,28 +787,70 @@
     } catch(e) { var c = map.getCenter(); fetchSalons(c.getLat(), c.getLng()); }
   }
 
-  /* ── 등록 살롱 핀 (Firestore/Supabase) ── */
-  var fsDb = null, fsPinOvs = [], fsUnsubSalons = null;
-  var fsToday = (function() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-  })();
-  function clearFsPins() { fsPinOvs.forEach(function(o){ o.setMap(null); }); fsPinOvs = []; }
-  function openFsInfo(s, pos, avail) {
-    closeInfo();
-    var bdStyle = avail === 'available' ? 'background:#22C55E;color:#fff' : avail === 'soon' ? 'background:#F97316;color:#fff' : 'background:#9CA3AF;color:#fff';
-    var bdTxt   = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
-    var el = document.createElement('div');
-    el.style.cssText = 'background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.15);padding:14px 16px 13px;min-width:178px;font-family:\'Noto Sans KR\',sans-serif;position:relative';
-    el.innerHTML =
-      '<button onclick="closeInfo()" style="position:absolute;top:9px;right:9px;background:#F2E8E4;border:none;border-radius:50%;width:23px;height:23px;font-size:11px;color:#7A7A7A;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>' +
-      '<div style="font-size:11px;color:#C4725A;font-weight:700;margin-bottom:4px">★ 등록 미용실</div>' +
-      '<div style="font-size:14px;font-weight:700;color:#1A1A1A;margin-bottom:7px;padding-right:28px">' + esc(s.name) + '</div>' +
-      '<div style="font-size:12px;color:#7A7A7A;margin-bottom:7px">' + esc(s.address || '') + '</div>' +
-      '<div style="' + bdStyle + ';font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;display:inline-block;margin-bottom:9px">' + bdTxt + '</div>' +
-      '<a href="booking.html" style="display:block;background:#C4725A;color:#fff;font-size:13px;font-weight:700;padding:8px;border-radius:9px;text-align:center;text-decoration:none">예약하기 →</a>';
-    infoOv = new kakao.maps.CustomOverlay({ position: pos, content: el, yAnchor: 1.12, zIndex: 10 });
-    infoOv.setMap(map);
+  /* ── 파트너 살롱 로드 ── */
+  async function loadPartnerSalons() {
+    try {
+      if (typeof SB === 'undefined') { _partnerSalons = []; return; }
+      var salons = await SB.getSalons();
+      _partnerSalons = await Promise.all(salons.map(async function(s) {
+        var slots = await SB.getSlots(s.id, _todayStr).catch(function(){ return {}; });
+        return Object.assign({}, s, { _avail: calcPartnerAvail(slots, s.businessHours) });
+      }));
+      if (_pinData.length) renderCards(_pinData);
+    } catch(e) { _partnerSalons = []; }
+  }
+
+  function calcPartnerAvail(slots, hours) {
+    var start = (hours && hours.start) || 10, end = (hours && hours.end) || 21;
+    var now = new Date(), h = now.getHours();
+    var blocked = 0, total = 0;
+    for (var t = start; t < end; t++) {
+      total++;
+      if (slots[String(t).padStart(2,'0') + ':00'] === 'blocked') blocked++;
+    }
+    if (total === 0 || h >= end) return 'full';
+    var ratio = blocked / total;
+    return ratio >= 0.8 ? 'full' : ratio >= 0.5 ? 'soon' : 'available';
+  }
+
+  /* ── 파트너 살롱 상세 ── */
+  async function showPartnerSalon(s) {
+    trackEvent(s.name, 'view');
+    var slots = {};
+    try { if (typeof SB !== 'undefined') slots = await SB.getSlots(s.id, _todayStr); } catch(e) {}
+    var avail = calcPartnerAvail(slots, s.businessHours);
+    var bdCls = avail === 'available' ? 'bd-avail' : avail === 'soon' ? 'bd-soon' : 'bd-full';
+    var bdTxt = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
+    var char  = esc((s.name || '?').charAt(0));
+    document.getElementById('panelBody').innerHTML =
+      '<div style="padding:4px 2px 10px">' +
+        '<button id="btn-back-list" style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#C4725A;font-size:13px;font-weight:700;cursor:pointer;padding:5px 8px;border-radius:8px;font-family:inherit">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>' +
+          '전체 목록' +
+        '</button>' +
+      '</div>' +
+      '<div style="background:#fff;border-radius:16px;padding:18px 16px 20px;box-shadow:0 1px 8px rgba(0,0,0,0.08);border:1.5px solid #C4725A">' +
+        '<div style="font-size:11px;color:#C4725A;font-weight:700;margin-bottom:8px">★ 헤어이어 파트너</div>' +
+        '<div style="display:flex;align-items:center;gap:13px;margin-bottom:12px">' +
+          '<div style="width:52px;height:52px;border-radius:50%;background:#C4725A;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff">' + char + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:18px;font-weight:700;color:#1A1A1A;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.name) + '</div>' +
+            (s.phone ? '<div style="font-size:12.5px;color:#7A7A7A">' + esc(s.phone) + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        (s.address ? '<div style="font-size:12px;color:#7A7A7A;margin-bottom:10px">' + esc(s.address) + '</div>' : '') +
+        '<div style="margin-bottom:16px"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
+        '<button id="btn-partner-naver" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#C4725A;color:#fff;font-size:15px;font-weight:700;padding:15px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;letter-spacing:-0.3px">' +
+          '네이버에서 예약하기' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>' +
+        '</button>' +
+      '</div>';
+    document.getElementById('btn-partner-naver').addEventListener('click', function() {
+      trackEvent(s.name, 'naver_click');
+      window.open(s.naverUrl || ('https://map.naver.com/v5/search/' + encodeURIComponent(s.name + ' 미용실')), '_blank');
+    });
+    document.getElementById('btn-back-list').addEventListener('click', function() { renderCards(_pinData); });
+    document.getElementById('panel').classList.add('expanded');
   }
 
   /* ── 이벤트 연결 ── */

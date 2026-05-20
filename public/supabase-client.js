@@ -282,6 +282,14 @@ const SB = (function () {
       return mapCard(inserted);
     },
 
+    async getCard(id) {
+      const { data, error } = await q(function (sb) {
+        return sb.from('style_cards').select('*').eq('id', id).maybeSingle();
+      });
+      if (error || !data) return null;
+      return mapCard(data);
+    },
+
     async deleteCard(id) {
       const { error } = await q(function (sb) { return sb.from('style_cards').delete().eq('id', id); });
       if (error) throw error;

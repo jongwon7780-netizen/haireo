@@ -261,6 +261,25 @@
     .sc-photo { aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
     .sc-photo img { width: 100%; height: 100%; object-fit: cover; }
 
+    /* ── 통계 섹션 ── */
+    .db-stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 24px;
+    }
+    .db-stat-card {
+      background: #fff; border-radius: 14px;
+      padding: 18px 10px; text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .db-stat-num {
+      font-size: 30px; font-weight: 700; color: var(--dark);
+      line-height: 1; margin-bottom: 7px;
+    }
+    .db-stat-label { font-size: 11px; color: var(--sub); font-weight: 600; }
+    .db-stat-card.rose  .db-stat-num { color: var(--rose); }
+    .db-stat-card.green .db-stat-num { color: #22C55E; }
+
     /* ── Landing Hero 버튼 ── */
     .landing-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .btn-start-big {
@@ -547,7 +566,7 @@
       </div>
 
       <p class="auth-err" id="suErr"></p>
-      <button class="auth-btn" onclick="doSignup()">가입 완료 → 대시보드로 이동</button>
+      <button id="suSignupBtn" class="auth-btn" onclick="doSignup()">가입 완료 → 대시보드로 이동</button>
       <div class="auth-footer">
         이미 계정이 있으신가요? <button onclick="showLoginView()">로그인하기</button>
       </div>
@@ -577,7 +596,7 @@
           onkeydown="if(event.key==='Enter')doLogin()" />
       </div>
       <p class="auth-err" id="liErr"></p>
-      <button class="auth-btn" onclick="doLogin()">로그인</button>
+      <button id="liLoginBtn" class="auth-btn" onclick="doLogin()">로그인</button>
       <div class="auth-footer">
         아직 계정이 없으신가요? <button onclick="showSignupView()">무료 가입</button>
       </div>
@@ -611,6 +630,26 @@
 
     <!-- 탭 0: 빈자리 관리 -->
     <div class="db-panel active" id="dbPanel0">
+
+      <!-- 내 가게 현황 통계 -->
+      <div class="db-sec-label" style="margin-bottom:10px">내 가게 현황</div>
+      <div class="db-stats-row">
+        <div class="db-stat-card">
+          <div class="db-stat-num" id="statToday">-</div>
+          <div class="db-stat-label">오늘 조회수</div>
+        </div>
+        <div class="db-stat-card green">
+          <div class="db-stat-num" id="statWeek">-</div>
+          <div class="db-stat-label">이번 주 조회수</div>
+        </div>
+        <div class="db-stat-card rose">
+          <div class="db-stat-num" id="statNaver">-</div>
+          <div class="db-stat-label">네이버 클릭수</div>
+        </div>
+      </div>
+
+      <!-- 오늘 빈자리 -->
+      <div class="db-sec-label" style="margin-bottom:6px">오늘 빈자리 관리</div>
       <div class="db-today-label" id="dbTodayLabel"></div>
       <div class="db-today-hint">탭 한 번으로 열림 ↔ 마감 전환</div>
       <div class="slot-grid" id="dbSlotGrid"></div>
@@ -667,30 +706,29 @@
   </div>
 </div>
 
-<script src="haireo-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
 <script src="login-modal.js"></script>
 <script>
 /* ═══════════════════════════════════════════════
-   for-salon.html — 사장님 회원가입 + 대시보드
+   for-salon.html — 사장님 대시보드 (Supabase)
 ═══════════════════════════════════════════════ */
 const OWNER_KEY = 'haireo_owner_auth_v2';
-let ownerAuth = null; // { id, name, phone, salonId, salonName }
+let ownerAuth  = null;  // { id, name, phone, salonId, salonName }
 let scSortMode = 'time';
+let _cachedSalon = null; // 현재 세션 살롱 캐시
 
-/* ── 초기화 ── */
-(function init() {
-  try { ownerAuth = JSON.parse(localStorage.getItem(OWNER_KEY)); } catch (e) {}
-  if (ownerAuth && HD.getSalon(ownerAuth.salonId)) {
-    showDashboard();
-  } else {
-    ownerAuth = null;
-    showLandingView();
-  }
-  const ham = document.getElementById('hamburger');
-  const menu = document.getElementById('navMenu');
-  ham.addEventListener('click', () => menu.classList.toggle('open'));
-  menu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => menu.classList.remove('open')));
-})();
+/* ── 유틸 ── */
+function v(id) { return document.getElementById(id).value.trim(); }
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function setBtnLoading(id, loading, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = loading;
+  if (text) el.textContent = loading ? '처리 중...' : text;
+}
 
 /* ── 뷰 전환 ── */
 const VIEWS = ['viewLanding','viewSignup','viewLogin','viewDashboard'];
@@ -703,16 +741,6 @@ function showSignupView()  { setView('viewSignup'); }
 function showLoginView()   {
   setView('viewLogin');
   setTimeout(() => { const el = document.getElementById('liPhone'); if (el) el.focus(); }, 80);
-}
-function showDashboard() {
-  setView('viewDashboard');
-  const salon = HD.getSalon(ownerAuth.salonId);
-  document.getElementById('dbSalonName').textContent = salon ? salon.name : ownerAuth.salonName;
-  document.getElementById('dbOwnerSub').textContent = ownerAuth.name + ' 원장님';
-  updateNavOwner(true);
-  renderSlots();
-  renderDesigners();
-  renderScCards();
 }
 
 /* ── Nav 업데이트 ── */
@@ -728,85 +756,55 @@ function updateNavOwner(on) {
   }
 }
 
-/* ── 회원가입 ── */
-function doSignup() {
-  const name       = v('suName');
-  const phone      = v('suPhone');
-  const pw         = document.getElementById('suPw').value;
-  const pw2        = document.getElementById('suPw2').value;
-  const salonName  = v('suSalonName');
-  const address    = v('suAddress');
-  const salonPhone = v('suSalonPhone');
-  const naverUrl   = v('suNaverUrl');
-  const start      = parseInt(document.getElementById('suStart').value);
-  const end        = parseInt(document.getElementById('suEnd').value);
-  const errEl      = document.getElementById('suErr');
-  const showErr = (m) => { errEl.textContent = m; errEl.classList.add('show'); };
-  errEl.classList.remove('show');
-
-  if (!name)       return showErr('사장님 이름을 입력해주세요.');
-  if (!phone)      return showErr('전화번호를 입력해주세요.');
-  if (pw.length < 6) return showErr('비밀번호는 6자 이상이어야 합니다.');
-  if (pw !== pw2)  return showErr('비밀번호가 일치하지 않습니다.');
-  if (!salonName)  return showErr('미용실 이름을 입력해주세요.');
-  if (!address)    return showErr('주소를 입력해주세요.');
-  if (HD.ownerPhoneExists(phone)) return showErr('이미 가입된 전화번호입니다.');
-
-  const salon = HD.saveSalon({
-    name: salonName, address, phone: salonPhone, naverUrl,
-    businessHours: { start, end },
-    designers: [], slots: {},
-  });
-  const owner = HD.saveOwner({ name, phone, password: pw, salonId: salon.id, salonName: salon.name });
-  ownerAuth = { id: owner.id, name: owner.name, phone: owner.phone, salonId: salon.id, salonName: salon.name };
-  localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
-  showDashboard();
-}
-
-/* ── 로그인 ── */
-function doLogin() {
-  const phone = v('liPhone');
-  const pw    = document.getElementById('liPw').value;
-  const errEl = document.getElementById('liErr');
-  errEl.classList.remove('show');
-  if (!phone || !pw) { errEl.textContent = '전화번호와 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
-  const found = HD.findOwner(phone, pw);
-  if (!found) { errEl.textContent = '전화번호 또는 비밀번호가 틀렸습니다.'; errEl.classList.add('show'); return; }
-  ownerAuth = { id: found.id, name: found.name, phone: found.phone, salonId: found.salonId, salonName: found.salonName };
-  localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
-  showDashboard();
-}
-
-/* ── 로그아웃 ── */
-function doLogout() {
-  ownerAuth = null;
-  localStorage.removeItem(OWNER_KEY);
-  updateNavOwner(false);
-  showLandingView();
+/* ── 대시보드 표시 ── */
+async function showDashboard() {
+  setView('viewDashboard');
+  _cachedSalon = await SB.getSalon(ownerAuth.salonId);
+  document.getElementById('dbSalonName').textContent = _cachedSalon ? _cachedSalon.name : ownerAuth.salonName;
+  document.getElementById('dbOwnerSub').textContent  = ownerAuth.name + ' 원장님';
+  updateNavOwner(true);
+  renderStats();
+  renderSlots();
+  renderDesigners();
+  renderScCards();
 }
 
 /* ── 대시보드 탭 ── */
 function dbTab(n) {
-  document.querySelectorAll('.db-tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.db-tab').forEach((t, i)  => t.classList.toggle('active', i === n));
   document.querySelectorAll('.db-panel').forEach((p, i) => p.classList.toggle('active', i === n));
+  if (n === 2) renderScCards(); // 카드탭 진입시 새로고침
+}
+
+/* ── 통계 ── */
+async function renderStats() {
+  if (!ownerAuth) return;
+  try {
+    const d = await fetch('/api/stats?salon_name=' + encodeURIComponent(ownerAuth.salonName)).then(r => r.json());
+    document.getElementById('statToday').textContent = d.today ?? 0;
+    document.getElementById('statWeek').textContent  = d.week  ?? 0;
+    document.getElementById('statNaver').textContent = d.naver ?? 0;
+  } catch(e) {}
 }
 
 /* ── 탭0: 빈자리 관리 ── */
-function renderSlots() {
-  const salon = HD.getSalon(ownerAuth.salonId);
+async function renderSlots() {
+  if (!ownerAuth) return;
+  const salon = _cachedSalon || await SB.getSalon(ownerAuth.salonId);
   if (!salon) return;
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const d = today;
-  document.getElementById('dbTodayLabel').textContent =
-    `📅 ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 오늘`;
 
-  const bh = salon.businessHours || { start: 10, end: 21 };
-  const saved = salon.slots?.[todayStr] || {};
+  const today    = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  document.getElementById('dbTodayLabel').textContent =
+    `📅 ${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 오늘`;
+
+  const bh       = salon.businessHours || { start: 10, end: 21 };
+  const slotsMap = await SB.getSlots(ownerAuth.salonId, todayStr);
+
   let html = '';
   for (let h = bh.start; h < bh.end; h++) {
-    const key = `${String(h).padStart(2,'0')}:00`;
-    const st = saved[key] || 'open';
+    const key = String(h).padStart(2, '0') + ':00';
+    const st  = slotsMap[key] || 'open';
     html += `<button class="slot-big-btn ${st}" onclick="toggleSlot('${key}')">
       ${h}시<div class="slot-status">${st === 'open' ? '✓ 열림' : '✗ 마감'}</div>
     </button>`;
@@ -814,24 +812,26 @@ function renderSlots() {
   document.getElementById('dbSlotGrid').innerHTML = html;
 }
 
-function toggleSlot(key) {
-  const salon = HD.getSalon(ownerAuth.salonId);
-  if (!salon) return;
+async function toggleSlot(key) {
+  if (!ownerAuth) return;
+  const btn = [...document.querySelectorAll('.slot-big-btn')].find(b => b.onclick?.toString().includes(`'${key}'`));
+  if (btn) btn.disabled = true;
+
   const todayStr = new Date().toISOString().slice(0, 10);
-  const slots = { ...(salon.slots || {}) };
-  const today = { ...(slots[todayStr] || {}) };
-  today[key] = (today[key] || 'open') === 'open' ? 'blocked' : 'open';
-  slots[todayStr] = today;
-  HD.saveSalon({ ...salon, slots });
-  localStorage.setItem('haireo_owner_slots', JSON.stringify({ salonId: ownerAuth.salonId, date: todayStr, slots: today }));
-  window.dispatchEvent(new CustomEvent('haireo-slots-changed'));
+  const slotsMap = await SB.getSlots(ownerAuth.salonId, todayStr);
+  const current  = slotsMap[key] || 'open';
+  const newSt    = current === 'open' ? 'blocked' : 'open';
+  try {
+    await SB.upsertSlot(ownerAuth.salonId, todayStr, key, newSt);
+  } catch(e) { console.error('슬롯 업데이트 실패:', e); }
   renderSlots();
 }
 
 /* ── 탭1: 디자이너 관리 ── */
-function renderDesigners() {
-  const salon = HD.getSalon(ownerAuth.salonId);
-  const list = document.getElementById('dsgnList');
+async function renderDesigners() {
+  if (!ownerAuth) return;
+  const salon    = _cachedSalon || await SB.getSalon(ownerAuth.salonId);
+  const list     = document.getElementById('dsgnList');
   const designers = salon?.designers || [];
   if (!designers.length) {
     list.innerHTML = '<p class="db-empty">아직 등록된 디자이너가 없어요.<br>디자이너를 추가하면 스타일카드를 배정할 수 있어요.</p>';
@@ -847,31 +847,44 @@ function renderDesigners() {
     </div>`).join('');
 }
 
-function addDesigner() {
+async function addDesigner() {
   const name     = document.getElementById('newDsgName').value.trim();
   const loginId  = document.getElementById('newDsgId').value.trim();
   const password = document.getElementById('newDsgPw').value.trim();
   const errEl    = document.getElementById('dsgnErr');
   errEl.classList.remove('show');
-  if (!name || !loginId || !password) { errEl.textContent = '이름, 아이디, 비밀번호를 모두 입력해주세요.'; errEl.classList.add('show'); return; }
-  const salon = HD.getSalon(ownerAuth.salonId);
+  if (!name || !loginId || !password) {
+    errEl.textContent = '이름, 아이디, 비밀번호를 모두 입력해주세요.';
+    errEl.classList.add('show'); return;
+  }
+  const salon = await SB.getSalon(ownerAuth.salonId);
   if (!salon) return;
   if ((salon.designers || []).some(d => d.loginId === loginId)) {
     errEl.textContent = '이미 사용 중인 아이디입니다.'; errEl.classList.add('show'); return;
   }
-  HD.saveSalon({ ...salon, designers: [...(salon.designers || []), { name, loginId, password }] });
-  document.getElementById('newDsgName').value = '';
-  document.getElementById('newDsgId').value = '';
-  document.getElementById('newDsgPw').value = '';
-  renderDesigners();
+  try {
+    _cachedSalon = await SB.saveSalon({
+      ...salon, id: ownerAuth.salonId,
+      designers: [...(salon.designers || []), { name, loginId, password }],
+    });
+    document.getElementById('newDsgName').value = '';
+    document.getElementById('newDsgId').value   = '';
+    document.getElementById('newDsgPw').value   = '';
+    renderDesigners();
+  } catch(e) { errEl.textContent = '저장 중 오류가 발생했습니다.'; errEl.classList.add('show'); }
 }
 
-function deleteDesigner(idx) {
+async function deleteDesigner(idx) {
   if (!confirm('이 디자이너를 삭제하시겠어요?')) return;
-  const salon = HD.getSalon(ownerAuth.salonId);
+  const salon = await SB.getSalon(ownerAuth.salonId);
   if (!salon) return;
-  HD.saveSalon({ ...salon, designers: (salon.designers || []).filter((_, i) => i !== idx) });
-  renderDesigners();
+  try {
+    _cachedSalon = await SB.saveSalon({
+      ...salon, id: ownerAuth.salonId,
+      designers: (salon.designers || []).filter((_, i) => i !== idx),
+    });
+    renderDesigners();
+  } catch(e) {}
 }
 
 /* ── 탭2: 스타일카드 ── */
@@ -882,29 +895,25 @@ function scSort(mode, btn) {
   renderScCards();
 }
 
-function renderScCards() {
+async function renderScCards() {
   if (!ownerAuth) return;
-  let cards = HD.getCardsBySalon(ownerAuth.salonId);
   const wrap = document.getElementById('dbScCards');
+  wrap.innerHTML = '<p class="db-empty" style="padding:20px">불러오는 중...</p>';
+  let cards = await SB.getCardsBySalon(ownerAuth.salonId);
   if (!cards.length) {
     wrap.innerHTML = '<p class="db-empty">아직 받은 스타일카드가 없습니다.<br>고객이 스타일카드를 보내면 여기에 표시돼요.</p>';
     return;
   }
-
   if (scSortMode === 'time') {
     cards = [...cards].sort((a, b) => {
       if (a.appointmentTime && b.appointmentTime) return a.appointmentTime.localeCompare(b.appointmentTime);
-      if (a.appointmentTime) return -1;
-      if (b.appointmentTime) return 1;
+      if (a.appointmentTime) return -1; if (b.appointmentTime) return 1;
       return (b.createdAt || '').localeCompare(a.createdAt || '');
     });
     wrap.innerHTML = cards.map(scCardHtml).join('');
   } else {
     const groups = {};
-    cards.forEach(c => {
-      const k = c.designerName || '디자이너 미지정';
-      (groups[k] = groups[k] || []).push(c);
-    });
+    cards.forEach(c => { const k = c.designerName || '디자이너 미지정'; (groups[k] = groups[k]||[]).push(c); });
     wrap.innerHTML = Object.entries(groups).map(([dsgn, list]) =>
       `<div class="sc-group-label">✂️ ${esc(dsgn)} (${list.length}건)</div>${list.map(scCardHtml).join('')}`
     ).join('');
@@ -912,7 +921,7 @@ function renderScCards() {
 }
 
 function scCardHtml(c) {
-  const tags = [...(c.styles || []), ...(c.color ? [c.color] : [])];
+  const tags = [...(c.styles||[]), ...(c.color ? [c.color] : [])];
   const name = c.customerName || '익명의 고객';
   const time = c.appointmentTime ? `🕐 ${esc(c.appointmentTime)}` : '시간 미정';
   return `<div class="sc-card" onclick="openScDetail('${esc(c.id)}')">
@@ -920,27 +929,27 @@ function scCardHtml(c) {
       <div class="sc-card-name">${esc(name)}</div>
       <div class="sc-card-time">${time}</div>
     </div>
-    <div class="sc-card-meta">${c.designerName ? `✂️ ${esc(c.designerName)} · ` : ''}${esc(c.gender || '')}${c.gender && tags.length ? ' · ' : ''}${tags.slice(0, 3).map(esc).join(', ')}</div>
-    ${tags.length ? `<div class="sc-card-tags">${tags.map(t => `<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+    <div class="sc-card-meta">${c.designerName ? `✂️ ${esc(c.designerName)} · ` : ''}${esc(c.gender||'')}${c.gender&&tags.length?' · ':''}${tags.slice(0,3).map(esc).join(', ')}</div>
+    ${tags.length ? `<div class="sc-card-tags">${tags.map(t=>`<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
   </div>`;
 }
 
-function openScDetail(cardId) {
-  const card = HD.getCardsBySalon(ownerAuth.salonId).find(c => c.id === cardId);
+async function openScDetail(cardId) {
+  const card = await SB.getCard(cardId);
   if (!card) return;
-  const tags = [...(card.styles || []), ...(card.color ? [card.color] : [])];
+  const tags = [...(card.styles||[]), ...(card.color ? [card.color] : [])];
   document.getElementById('scDetailBody').innerHTML = `
     <div style="background:var(--cream);border-radius:12px;padding:14px 16px;margin-bottom:16px">
-      <div class="sc-detail-row"><span class="sc-detail-key">고객</span><span class="sc-detail-val">${esc(card.customerName || '익명')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">디자이너</span><span class="sc-detail-val">${esc(card.designerName || '미지정')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">예약 시간</span><span class="sc-detail-val">${esc(card.appointmentTime || '미정')}</span></div>
-      <div class="sc-detail-row"><span class="sc-detail-key">성별</span><span class="sc-detail-val">${esc(card.gender || '미선택')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">고객</span><span class="sc-detail-val">${esc(card.customerName||'익명')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">디자이너</span><span class="sc-detail-val">${esc(card.designerName||'미지정')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">예약 시간</span><span class="sc-detail-val">${esc(card.appointmentTime||'미정')}</span></div>
+      <div class="sc-detail-row"><span class="sc-detail-key">성별</span><span class="sc-detail-val">${esc(card.gender||'미선택')}</span></div>
     </div>
-    ${(card.styles || []).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">스타일</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${card.styles.map(esc).join(' · ')}</p>` : ''}
+    ${card.styles?.length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">스타일</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${card.styles.map(esc).join(' · ')}</p>` : ''}
     ${card.color ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">색상</p><p style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:14px">${esc(card.color)}</p>` : ''}
     ${card.freeText ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">요청사항</p><p style="font-size:15px;color:var(--dark);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${esc(card.freeText)}</p>` : ''}
-    ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${tags.map(t => `<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
-    ${(card.photos || []).filter(Boolean).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px">참고 사진</p><div class="sc-photos">${card.photos.filter(Boolean).map(p => `<div class="sc-photo"><img src="${p}" loading="lazy" /></div>`).join('')}</div>` : ''}
+    ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${tags.map(t=>`<span class="sc-tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+    ${card.photos?.filter(Boolean).length ? `<p style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px">참고 사진</p><div class="sc-photos">${card.photos.filter(Boolean).map(p=>`<div class="sc-photo"><img src="${p}" loading="lazy"/></div>`).join('')}</div>` : ''}
     <p style="font-size:12px;color:var(--sub);margin-top:14px;text-align:right">${card.createdAt ? new Date(card.createdAt).toLocaleString('ko') : ''}</p>`;
   document.getElementById('scDetailOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -950,14 +959,97 @@ function closeScDetail() {
   document.body.style.overflow = '';
 }
 
+/* ── 회원가입 ── */
+async function doSignup() {
+  const name       = v('suName');
+  const phone      = v('suPhone');
+  const pw         = document.getElementById('suPw').value;
+  const pw2        = document.getElementById('suPw2').value;
+  const salonName  = v('suSalonName');
+  const address    = v('suAddress');
+  const salonPhone = v('suSalonPhone');
+  const naverUrl   = v('suNaverUrl');
+  const start      = parseInt(document.getElementById('suStart').value);
+  const end        = parseInt(document.getElementById('suEnd').value);
+  const errEl      = document.getElementById('suErr');
+  const showErr    = (m) => { errEl.textContent = m; errEl.classList.add('show'); };
+  errEl.classList.remove('show');
+
+  if (!name)        return showErr('사장님 이름을 입력해주세요.');
+  if (!phone)       return showErr('전화번호를 입력해주세요.');
+  if (pw.length < 6) return showErr('비밀번호는 6자 이상이어야 합니다.');
+  if (pw !== pw2)   return showErr('비밀번호가 일치하지 않습니다.');
+  if (!salonName)   return showErr('미용실 이름을 입력해주세요.');
+  if (!address)     return showErr('주소를 입력해주세요.');
+
+  setBtnLoading('suSignupBtn', true, '가입 완료 → 대시보드로 이동');
+  try {
+    if (await SB.ownerPhoneExists(phone)) { showErr('이미 가입된 전화번호입니다.'); return; }
+    const owner = await SB.saveOwner({ name, phone, password: pw });
+    const salon = await SB.saveSalon({
+      ownerId: owner.id, name: salonName, address,
+      phone: salonPhone, naverUrl,
+      businessHours: { start, end },
+    });
+    ownerAuth = { id: owner.id, name: owner.name, phone: owner.phone, salonId: salon.id, salonName: salon.name };
+    localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
+    _cachedSalon = salon;
+    await showDashboard();
+  } catch(e) {
+    showErr('가입 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+  } finally {
+    setBtnLoading('suSignupBtn', false, '가입 완료 → 대시보드로 이동');
+  }
+}
+
+/* ── 로그인 ── */
+async function doLogin() {
+  const phone = v('liPhone');
+  const pw    = document.getElementById('liPw').value;
+  const errEl = document.getElementById('liErr');
+  errEl.classList.remove('show');
+  if (!phone || !pw) { errEl.textContent = '전화번호와 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
+
+  setBtnLoading('liLoginBtn', true, '로그인');
+  try {
+    const found = await SB.findOwner(phone, pw);
+    if (!found) { errEl.textContent = '전화번호 또는 비밀번호가 틀렸습니다.'; errEl.classList.add('show'); return; }
+    ownerAuth = { id: found.id, name: found.name, phone: found.phone, salonId: found.salonId, salonName: found.salonName };
+    localStorage.setItem(OWNER_KEY, JSON.stringify(ownerAuth));
+    await showDashboard();
+  } catch(e) {
+    errEl.textContent = '로그인 중 오류가 발생했어요.'; errEl.classList.add('show');
+  } finally {
+    setBtnLoading('liLoginBtn', false, '로그인');
+  }
+}
+
+/* ── 로그아웃 ── */
+function doLogout() {
+  ownerAuth = null; _cachedSalon = null;
+  localStorage.removeItem(OWNER_KEY);
+  updateNavOwner(false);
+  showLandingView();
+}
+
 /* ── FAQ ── */
 function toggleFaq(btn) { btn.closest('.faq-item').classList.toggle('open'); }
 
-/* ── 유틸 ── */
-function v(id) { return document.getElementById(id).value.trim(); }
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+/* ── 초기화 ── */
+(async function init() {
+  try { ownerAuth = JSON.parse(localStorage.getItem(OWNER_KEY)); } catch(e) {}
+  if (ownerAuth) {
+    const salon = await SB.getSalon(ownerAuth.salonId).catch(() => null);
+    if (salon) { _cachedSalon = salon; await showDashboard(); }
+    else { ownerAuth = null; showLandingView(); }
+  } else {
+    showLandingView();
+  }
+  const ham = document.getElementById('hamburger');
+  const menu = document.getElementById('navMenu');
+  ham.addEventListener('click', () => menu.classList.toggle('open'));
+  menu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => menu.classList.remove('open')));
+})();
 </script>
 </body>
 </html>
