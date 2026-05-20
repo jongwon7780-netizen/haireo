@@ -440,11 +440,7 @@
                     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   window.openNaverPlace = function(name) {
-    var bookingUrl = 'https://booking.naver.com/booking/13/bizes?query=' + encodeURIComponent(name);
-    var fallbackUrl = 'https://map.naver.com/v5/search/' + encodeURIComponent(name);
-    if (!window.open(bookingUrl, '_blank')) {
-      window.open(fallbackUrl, '_blank');
-    }
+    window.open('https://map.naver.com/v5/search/' + encodeURIComponent(name + ' 미용실'), '_blank');
   };
 
   /* ── 지도 초기화 ── */
@@ -603,18 +599,13 @@
         '<button id="btn-naver-selected" style="display:flex;align-items:center;justify-content:center;' +
           'gap:6px;width:100%;background:#C4725A;color:#fff;font-size:15px;font-weight:700;' +
           'padding:15px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;letter-spacing:-0.3px">' +
-          '네이버에서 예약하기' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>' +
+          '네이버에서 찾아보기 →' +
         '</button>' +
       '</div>';
 
     document.getElementById('btn-naver-selected').addEventListener('click', function() {
       trackEvent(p.place_name, 'naver_click');
-      var bookingUrl = 'https://booking.naver.com/booking/13/bizes?query=' + encodeURIComponent(p.place_name);
-      var fallbackUrl = 'https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name);
-      if (!window.open(bookingUrl, '_blank')) {
-        window.open(fallbackUrl, '_blank');
-      }
+      window.open('https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name + ' 미용실'), '_blank');
     });
     document.getElementById('btn-back-list').addEventListener('click', function() {
       renderCards(_pinData);
@@ -848,17 +839,12 @@
         (s.address ? '<div style="font-size:12px;color:#7A7A7A;margin-bottom:10px">' + esc(s.address) + '</div>' : '') +
         '<div style="margin-bottom:16px"><span class="' + bdCls + '">' + bdTxt + '</span></div>' +
         '<button id="btn-partner-naver" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#C4725A;color:#fff;font-size:15px;font-weight:700;padding:15px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;letter-spacing:-0.3px">' +
-          '네이버에서 예약하기' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>' +
+          '네이버에서 찾아보기 →' +
         '</button>' +
       '</div>';
     document.getElementById('btn-partner-naver').addEventListener('click', function() {
       trackEvent(s.name, 'naver_click');
-      var bookingUrl = 'https://booking.naver.com/booking/13/bizes?query=' + encodeURIComponent(s.name);
-      var fallbackUrl = 'https://map.naver.com/v5/search/' + encodeURIComponent(s.name);
-      if (!window.open(bookingUrl, '_blank')) {
-        window.open(fallbackUrl, '_blank');
-      }
+      window.open('https://map.naver.com/v5/search/' + encodeURIComponent(s.name + ' 미용실'), '_blank');
     });
     document.getElementById('btn-back-list').addEventListener('click', function() { renderCards(_pinData); });
     document.getElementById('panel').classList.add('expanded');
