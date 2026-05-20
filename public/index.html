@@ -440,7 +440,9 @@
                     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   window.openNaverPlace = function(name, placeUrl) {
-    var url = placeUrl || 'https://map.naver.com/v5/search/' + encodeURIComponent(name + ' 미용실');
+    var url = placeUrl
+      ? (placeUrl + '/예약')
+      : ('https://map.naver.com/v5/search/' + encodeURIComponent(name));
     window.open(url, '_blank');
   };
 
@@ -607,7 +609,10 @@
 
     document.getElementById('btn-naver-selected').addEventListener('click', function() {
       trackEvent(p.place_name, 'naver_click');
-      window.open('https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name + ' 미용실'), '_blank');
+      var dest = p.place_url
+        ? (p.place_url + '/예약')
+        : ('https://map.naver.com/v5/search/' + encodeURIComponent(p.place_name));
+      window.open(dest, '_blank');
     });
     document.getElementById('btn-back-list').addEventListener('click', function() {
       renderCards(_pinData);
