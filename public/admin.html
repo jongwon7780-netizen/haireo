@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>헤어이어 — 사장님 대시보드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rose:       #C4725A;
+      --rose-dark:  #A85A44;
+      --rose-light: #F2E8E4;
+      --dark:  #2D2D2D;
+      --sub:   #7A7A7A;
+      --border:#E8E0D8;
+      --cream: #F9F5F0;
+      --green: #4CAF82;
+      --red:   #D95C5C;
+      --white: #FFFFFF;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--cream);
+      color: var(--dark);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── 헤더 ── */
+    .hdr {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+    .hdr-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px; max-width: 680px; margin: 0 auto;
+    }
+    .hdr-logo { font-size: 18px; font-weight: 700; color: var(--rose); }
+    .hdr-logo span { font-size: 12px; font-weight: 500; color: var(--sub); margin-left: 7px; }
+    .hdr-back {
+      font-size: 13px; color: var(--rose); font-weight: 600;
+      text-decoration: none; padding: 6px 14px;
+      border-radius: 20px; border: 1.5px solid var(--rose);
+      transition: all 0.15s;
+    }
+    .hdr-back:hover { background: var(--rose); color: #fff; }
+
+    /* ── 탭 내비 ── */
+    .tab-nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-row {
+      display: flex; max-width: 680px; margin: 0 auto;
+    }
+    .tab-btn {
+      flex: 1; min-width: 80px; padding: 13px 8px;
+      border: none; background: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px; font-weight: 600; color: var(--sub);
+      cursor: pointer; white-space: nowrap;
+      border-bottom: 2.5px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: var(--rose); border-bottom-color: var(--rose); }
+
+    /* ── 탭 컨텐트 ── */
+    .tab-pane { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
+    .tab-pane.active { display: block; }
+
+    /* ── 카드 ── */
+    .card {
+      background: var(--white); border-radius: 16px;
+      padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    }
+    .card-ttl {
+      font-size: 15px; font-weight: 700; color: var(--dark);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── 폼 ── */
+    .fg { margin-bottom: 13px; }
+    .fl {
+      display: block; font-size: 11px; font-weight: 700;
+      color: var(--sub); margin-bottom: 5px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .fi {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; color: var(--dark); outline: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: border-color 0.2s; background: #fff;
+    }
+    .fi:focus { border-color: var(--rose); }
+    .frow { display: flex; gap: 10px; }
+    .frow .fg { flex: 1; }
+    .fhint { font-size: 11px; color: var(--sub); margin-top: 5px; line-height: 1.5; }
+
+    /* ── 버튼 ── */
+    .btn-primary {
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      background: var(--rose); color: #fff;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--rose-dark); }
+    .btn-green {
+      padding: 7px 14px; border-radius: 8px; border: none;
+      background: #E8F5EF; color: var(--green);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .btn-red {
+      padding: 7px 14px; border-radius: 8px; border: none;
+      background: #FFECEC; color: var(--red);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .btn-del {
+      padding: 5px 10px; border-radius: 7px; border: none;
+      background: #FFECEC; color: var(--red);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif; flex-shrink: 0;
+    }
+
+    /* ── 디자이너 ── */
+    .d-card {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--cream); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 8px;
+    }
+    .d-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--rose); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; flex-shrink: 0;
+    }
+    .d-info { flex: 1; min-width: 0; }
+    .d-name { font-size: 14px; font-weight: 700; }
+    .d-spec { font-size: 12px; color: var(--sub); margin-top: 2px; }
+    .d-empty { font-size: 13px; color: var(--sub); text-align: center; padding: 20px 0; }
+
+    /* ── 슬롯 ── */
+    .slot-date {
+      font-size: 16px; font-weight: 700; text-align: center;
+      margin-bottom: 14px; color: var(--dark);
+    }
+    .slot-actions {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+    }
+    .slot-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .slot-btn {
+      border: none; border-radius: 10px;
+      padding: 12px 4px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px; font-weight: 700;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 3px;
+      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .slot-btn:active { transform: scale(0.9); }
+    .slot-btn.open  { background: #E8F5EF; color: var(--green); }
+    .slot-btn.booked{ background: #FFECEC; color: var(--red);   }
+    .slot-sub { font-size: 10px; font-weight: 600; opacity: 0.75; }
+    .slot-tip {
+      font-size: 11px; color: var(--sub); text-align: center;
+      margin-top: 14px; line-height: 1.6;
+    }
+
+    /* ── 통계 ── */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .stat-card {
+      background: var(--cream); border-radius: 12px;
+      padding: 16px 8px; text-align: center;
+    }
+    .stat-val  { font-size: 30px; font-weight: 700; color: var(--rose); }
+    .stat-lbl  { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 600; }
+    .bar-wrap  {
+      display: flex; align-items: flex-end; gap: 6px;
+      height: 80px; padding: 0 2px; margin-top: 16px;
+    }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar {
+      width: 100%; border-radius: 5px 5px 0 0;
+      background: var(--rose-light);
+      transition: background 0.15s;
+    }
+    .bar.today { background: var(--rose); }
+    .bar-lbl { font-size: 10px; color: var(--sub); font-weight: 600; }
+
+    /* ── 토스트 ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: #1A1A1A; color: #fff;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 14px; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s; z-index: 9999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── 반응형 ── */
+    @media (max-width: 380px) {
+      .slot-grid { grid-template-columns: repeat(3, 1fr); }
+      .stat-grid { grid-template-columns: 1fr; }
+      .stat-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-logo">헤어이어 <span>사장님 대시보드</span></div>
+    <a href="/" class="hdr-back">← 지도로</a>
+  </div>
+</header>
+
+<!-- 탭 내비 -->
+<nav class="tab-nav">
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="salon">🏪 미용실 정보</button>
+    <button class="tab-btn"        data-tab="designers">💇 디자이너</button>
+    <button class="tab-btn"        data-tab="slots">📅 빈자리</button>
+    <button class="tab-btn"        data-tab="stats">📊 통계</button>
+  </div>
+</nav>
+
+<!-- ╔══ 탭 1: 미용실 정보 ══╗ -->
+<div class="tab-pane active" id="pane-salon">
+  <div class="card">
+    <div class="card-ttl">🏪 내 미용실 정보</div>
+
+    <div class="fg">
+      <label class="fl">미용실 이름 *</label>
+      <input class="fi" id="salonName" placeholder="예) 강남 헤어스튜디오" />
+    </div>
+    <div class="fg">
+      <label class="fl">주소</label>
+      <input class="fi" id="salonAddr" placeholder="예) 서울 강남구 역삼동 123-45" />
+    </div>
+    <div class="fg">
+      <label class="fl">전화번호</label>
+      <input class="fi" id="salonPhone" placeholder="예) 02-1234-5678" type="tel" />
+    </div>
+    <div class="fg">
+      <label class="fl">★ 네이버 예약 URL</label>
+      <input class="fi" id="salonNaverUrl" placeholder="https://booking.naver.com/..." />
+      <p class="fhint">저장하면 지도 앱 "네이버에서 예약하기" 버튼이 이 URL로 연결됩니다.</p>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">영업 시작 (시)</label>
+        <input class="fi" id="salonStart" type="number" min="0" max="23" value="10" />
+      </div>
+      <div class="fg">
+        <label class="fl">영업 종료 (시)</label>
+        <input class="fi" id="salonEnd" type="number" min="0" max="23" value="21" />
+      </div>
+    </div>
+    <button class="btn-primary" id="saveSalonBtn" onclick="saveSalonInfo()">저장하기</button>
+  </div>
+</div>
+
+<!-- ╔══ 탭 2: 디자이너 ══╗ -->
+<div class="tab-pane" id="pane-designers">
+  <div class="card">
+    <div class="card-ttl">➕ 디자이너 추가</div>
+    <div class="fg">
+      <label class="fl">이름</label>
+      <input class="fi" id="dName" placeholder="예) 김지수"
+        onkeydown="if(event.key==='Enter')addDesigner()" />
+    </div>
+    <div class="fg">
+      <label class="fl">전문 시술 (쉼표 구분)</label>
+      <input class="fi" id="dSpecialty" placeholder="예) 펌, 염색, 커트"
+        onkeydown="if(event.key==='Enter')addDesigner()" />
+    </div>
+    <button class="btn-primary" onclick="addDesigner()">추가하기</button>
+  </div>
+
+  <div class="card">
+    <div class="card-ttl">💇 디자이너 목록</div>
+    <div id="designerList"></div>
+  </div>
+</div>
+
+<!-- ╔══ 탭 3: 빈자리 ══╗ -->
+<div class="tab-pane" id="pane-slots">
+  <div class="card">
+    <p class="slot-date" id="slotDate"></p>
+    <div class="slot-actions">
+      <button class="btn-green" onclick="setAllSlots('open')">전체 열기</button>
+      <button class="btn-red"   onclick="setAllSlots('booked')">전체 마감</button>
+    </div>
+    <div class="slot-grid" id="slotGrid"></div>
+    <p class="slot-tip">탭 한 번으로 열림 ↔ 마감 전환 · 자동 저장됩니다</p>
+  </div>
+</div>
+
+<!-- ╔══ 탭 4: 통계 ══╗ -->
+<div class="tab-pane" id="pane-stats">
+  <div class="card">
+    <div class="card-ttl">📊 이번 주 현황</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-val">47</div>
+        <div class="stat-lbl">오늘 조회수</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">213</div>
+        <div class="stat-lbl">이번주 조회수</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">12</div>
+        <div class="stat-lbl">네이버 클릭</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-ttl">📈 요일별 조회수</div>
+    <div class="bar-wrap" id="barChart"></div>
+    <div style="display:flex;gap:6px;margin-top:4px;padding:0 2px">
+      <!-- labels injected by JS -->
+      <div id="barLabels" style="display:flex;gap:6px;width:100%"></div>
+    </div>
+  </div>
+
+  <div class="card" style="text-align:center;padding:16px 20px">
+    <p style="font-size:12px;color:var(--sub);line-height:1.7">
+      ※ 현재 더미 데이터입니다.<br>실제 통계는 Supabase views 테이블 연동 후 반영됩니다.
+    </p>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ──────────────────────────────────────
+   상수 / 상태
+────────────────────────────────────── */
+const SALON_KEY     = 'haireo_admin_salon';
+const DESIGNERS_KEY = 'haireo_admin_designers';
+const SLOTS_KEY     = 'haireo_admin_slots';
+const HOURS = [10,11,12,13,14,15,16,17,18,19,20,21];
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function todayLabel() {
+  const d = new Date();
+  const wd = ['일','월','화','수','목','금','토'][d.getDay()];
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${wd})`;
+}
+
+/* ──────────────────────────────────────
+   탭 전환
+────────────────────────────────────── */
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + tabId));
+}
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+
+/* ──────────────────────────────────────
+   토스트
+────────────────────────────────────── */
+let _toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/* ══════════════════════════════════════
+   탭 1: 미용실 정보
+══════════════════════════════════════ */
+function loadSalon() {
+  try { return JSON.parse(localStorage.getItem(SALON_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveSalonInfo() {
+  const name = document.getElementById('salonName').value.trim();
+  if (!name) { showToast('미용실 이름을 입력해주세요'); return; }
+  const data = {
+    name,
+    address:  document.getElementById('salonAddr').value.trim(),
+    phone:    document.getElementById('salonPhone').value.trim(),
+    naverUrl: document.getElementById('salonNaverUrl').value.trim(),
+    hoursStart: parseInt(document.getElementById('salonStart').value) || 10,
+    hoursEnd:   parseInt(document.getElementById('salonEnd').value)   || 21,
+  };
+  localStorage.setItem(SALON_KEY, JSON.stringify(data));
+  showToast('✓ 저장되었습니다');
+}
+function initSalonTab() {
+  const s = loadSalon();
+  if (s.name)      document.getElementById('salonName').value     = s.name;
+  if (s.address)   document.getElementById('salonAddr').value     = s.address;
+  if (s.phone)     document.getElementById('salonPhone').value    = s.phone;
+  if (s.naverUrl)  document.getElementById('salonNaverUrl').value = s.naverUrl;
+  if (s.hoursStart != null) document.getElementById('salonStart').value = s.hoursStart;
+  if (s.hoursEnd   != null) document.getElementById('salonEnd').value   = s.hoursEnd;
+}
+
+/* ══════════════════════════════════════
+   탭 2: 디자이너
+══════════════════════════════════════ */
+function loadDesigners() {
+  try { return JSON.parse(localStorage.getItem(DESIGNERS_KEY)) || []; } catch(e) { return []; }
+}
+function saveDesigners(arr) { localStorage.setItem(DESIGNERS_KEY, JSON.stringify(arr)); }
+
+function addDesigner() {
+  const name = document.getElementById('dName').value.trim();
+  const spec = document.getElementById('dSpecialty').value.trim();
+  if (!name) { showToast('이름을 입력해주세요'); return; }
+  const arr = loadDesigners();
+  arr.push({ id: Date.now(), name, specialty: spec });
+  saveDesigners(arr);
+  document.getElementById('dName').value = '';
+  document.getElementById('dSpecialty').value = '';
+  renderDesigners();
+  showToast('✓ 디자이너가 추가되었습니다');
+}
+function deleteDesigner(id) {
+  const arr = loadDesigners().filter(d => d.id !== id);
+  saveDesigners(arr);
+  renderDesigners();
+}
+function renderDesigners() {
+  const arr = loadDesigners();
+  const el  = document.getElementById('designerList');
+  if (!arr.length) {
+    el.innerHTML = '<p class="d-empty">등록된 디자이너가 없습니다</p>';
+    return;
+  }
+  el.innerHTML = arr.map(d => `
+    <div class="d-card">
+      <div class="d-avatar">${(d.name||'?').charAt(0)}</div>
+      <div class="d-info">
+        <div class="d-name">${esc(d.name)}</div>
+        ${d.specialty ? `<div class="d-spec">${esc(d.specialty)}</div>` : ''}
+      </div>
+      <button class="btn-del" onclick="deleteDesigner(${d.id})">삭제</button>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════
+   탭 3: 빈자리
+══════════════════════════════════════ */
+function loadSlots() {
+  try { return JSON.parse(localStorage.getItem(SLOTS_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveSlots(data) { localStorage.setItem(SLOTS_KEY, JSON.stringify(data)); }
+
+function getSlot(h) {
+  const slots = loadSlots();
+  return (slots[todayStr()] || {})[h] || 'open';
+}
+function toggleSlot(h) {
+  const slots = loadSlots();
+  const today = todayStr();
+  if (!slots[today]) slots[today] = {};
+  slots[today][h] = getSlot(h) === 'open' ? 'booked' : 'open';
+  saveSlots(slots);
+  renderSlots();
+}
+function setAllSlots(status) {
+  const slots = loadSlots();
+  const today = todayStr();
+  if (!slots[today]) slots[today] = {};
+  HOURS.forEach(h => { slots[today][h] = status; });
+  saveSlots(slots);
+  renderSlots();
+  showToast(status === 'open' ? '전체 열렸습니다' : '전체 마감됩니다');
+}
+function renderSlots() {
+  document.getElementById('slotDate').textContent = todayLabel();
+  const grid = document.getElementById('slotGrid');
+  grid.innerHTML = HOURS.map(h => {
+    const st = getSlot(h);
+    const lbl = st === 'open' ? '가능' : '마감';
+    return `<button class="slot-btn ${st}" onclick="toggleSlot(${h})" aria-label="${h}시 ${lbl}">
+      ${h}시<span class="slot-sub">${lbl}</span>
+    </button>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   탭 4: 통계 — 바 차트
+══════════════════════════════════════ */
+function renderBarChart() {
+  const days  = ['월','화','수','목','금','토','일'];
+  const vals  = [28, 35, 45, 31, 47, 27, 0];
+  const max   = Math.max(...vals) || 1;
+  const todayDow = (new Date().getDay() + 6) % 7; // 0=월
+
+  const chart = document.getElementById('barChart');
+  const lbls  = document.getElementById('barLabels');
+  chart.innerHTML = vals.map((v, i) => {
+    const pct = Math.round((v / max) * 100);
+    const cls = i === todayDow ? 'today' : '';
+    return `<div class="bar-col"><div class="bar ${cls}" style="height:${pct}%"></div></div>`;
+  }).join('');
+  lbls.innerHTML = days.map((d, i) => {
+    const isTd = i === todayDow;
+    return `<div class="bar-col"><span class="bar-lbl" style="color:${isTd?'var(--rose)':'var(--sub)'}">${d}</span></div>`;
+  }).join('');
+}
+
+/* ──────────────────────────────────────
+   HTML 이스케이프
+────────────────────────────────────── */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ──────────────────────────────────────
+   초기화
+────────────────────────────────────── */
+initSalonTab();
+renderDesigners();
+renderSlots();
+renderBarChart();
+</script>
+</body>
+</html>

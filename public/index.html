@@ -797,15 +797,38 @@
   /* ── 파트너 살롱 로드 ── */
   async function loadPartnerSalons() {
     try {
-      if (typeof SB === 'undefined') { _partnerSalons = []; return; }
-      var salons = await SB.getSalons();
-      _partnerSalons = await Promise.all(salons.map(async function(s) {
-        var slots = await SB.getSlots(s.id, _todayStr).catch(function(){ return {}; });
-        return Object.assign({}, s, { _avail: calcPartnerAvail(slots, s.businessHours) });
-      }));
-      renderPartnerPins(_partnerSalons);
-      if (_pinData.length) renderCards(_pinData);
+      if (typeof SB === 'undefined') { _partnerSalons = []; } else {
+        var salons = await SB.getSalons();
+        _partnerSalons = await Promise.all(salons.map(async function(s) {
+          var slots = await SB.getSlots(s.id, _todayStr).catch(function(){ return {}; });
+          return Object.assign({}, s, { _avail: calcPartnerAvail(slots, s.businessHours) });
+        }));
+      }
     } catch(e) { _partnerSalons = []; }
+
+    /* admin.html localStorage 살롱을 목록 맨 앞에 추가 */
+    try {
+      var adminSalon = JSON.parse(localStorage.getItem('haireo_admin_salon') || 'null');
+      if (adminSalon && adminSalon.name) {
+        var adminSlotsAll = JSON.parse(localStorage.getItem('haireo_admin_slots') || '{}');
+        var todayRaw = adminSlotsAll[_todayStr] || {};
+        var converted = {};
+        Object.keys(todayRaw).forEach(function(h) {
+          converted[String(h).padStart(2,'0') + ':00'] = todayRaw[h] === 'booked' ? 'blocked' : 'open';
+        });
+        var avail = calcPartnerAvail(converted, { start: adminSalon.hoursStart || 10, end: adminSalon.hoursEnd || 21 });
+        _partnerSalons.unshift({
+          id: 'admin-local', name: adminSalon.name,
+          address: adminSalon.address || '', phone: adminSalon.phone || '',
+          naverUrl: adminSalon.naverUrl || '',
+          businessHours: { start: adminSalon.hoursStart || 10, end: adminSalon.hoursEnd || 21 },
+          lat: null, lng: null, _avail: avail, _isLocalAdmin: true,
+        });
+      }
+    } catch(e) {}
+
+    renderPartnerPins(_partnerSalons);
+    if (_pinData.length) renderCards(_pinData);
   }
 
   function renderPartnerPins(salons) {
@@ -845,7 +868,16 @@
   async function showPartnerSalon(s) {
     trackEvent(s.name, 'view');
     var slots = {};
-    try { if (typeof SB !== 'undefined') slots = await SB.getSlots(s.id, _todayStr); } catch(e) {}
+    if (s._isLocalAdmin) {
+      var adminSlotsAll = {};
+      try { adminSlotsAll = JSON.parse(localStorage.getItem('haireo_admin_slots') || '{}'); } catch(e) {}
+      var todayRaw = adminSlotsAll[_todayStr] || {};
+      Object.keys(todayRaw).forEach(function(h) {
+        slots[String(h).padStart(2,'0') + ':00'] = todayRaw[h] === 'booked' ? 'blocked' : 'open';
+      });
+    } else {
+      try { if (typeof SB !== 'undefined') slots = await SB.getSlots(s.id, _todayStr); } catch(e) {}
+    }
     var avail = calcPartnerAvail(slots, s.businessHours);
     var bdCls = avail === 'available' ? 'bd-avail' : avail === 'soon' ? 'bd-soon' : 'bd-full';
     var bdTxt = avail === 'available' ? '빈자리 있음' : avail === 'soon' ? '마감임박' : '마감';
@@ -874,7 +906,10 @@
       '</div>';
     document.getElementById('btn-partner-naver').addEventListener('click', function() {
       trackEvent(s.name, 'naver_click');
-      window.open('https://map.naver.com/v5/search/' + encodeURIComponent(s.name + ' 미용실'), '_blank');
+      var dest = s.naverUrl
+        ? s.naverUrl
+        : 'https://map.naver.com/v5/search/' + encodeURIComponent(s.name + ' 미용실');
+      window.open(dest, '_blank');
     });
     document.getElementById('btn-back-list').addEventListener('click', function() { renderCards(_pinData); });
     document.getElementById('panel').classList.add('expanded');
