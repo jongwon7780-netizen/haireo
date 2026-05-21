@@ -273,11 +273,13 @@
     document.getElementById('omErr').classList.remove('show');
   };
   window.ownerLogin = function () {
-    /* login-modal.js 입력칸과 owner-bar 입력칸 둘 다 지원 */
-    const idEl = document.getElementById('lmOwnerId') || document.getElementById('omId');
-    const pwEl = document.getElementById('lmOwnerPw') || document.getElementById('omPw');
-    const id = ((idEl && idEl.value) || '').trim();
-    const pw = ((pwEl && pwEl.value) || '').trim();
+    /* owner-bar 모달 입력칸 우선, 비어있으면 login-modal 입력칸 사용 */
+    const omId = (document.getElementById('omId')?.value || '').trim();
+    const omPw = (document.getElementById('omPw')?.value || '').trim();
+    const lmId = (document.getElementById('lmOwnerId')?.value || '').trim();
+    const lmPw = (document.getElementById('lmOwnerPw')?.value || '').trim();
+    const id = omId || lmId;
+    const pw = omPw || lmPw;
 
     if ((id === 'admin' || id === 'test') && pw === '1234') {
       localStorage.setItem('ownerLoggedIn', 'true');

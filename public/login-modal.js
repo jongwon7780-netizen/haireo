@@ -201,12 +201,12 @@
         <div class="lm-input-wrap">
           <input class="lm-input" type="text" id="lmOwnerId" placeholder="아이디"
             style="width:100%;margin-bottom:8px;box-sizing:border-box"
-            onkeydown="if(event.key==='Enter')ownerLogin()" />
+            onkeydown="if(event.key==='Enter')lmOwnerLogin()" />
           <input class="lm-input" type="password" id="lmOwnerPw" placeholder="비밀번호"
             style="width:100%;box-sizing:border-box"
-            onkeydown="if(event.key==='Enter')ownerLogin()" />
+            onkeydown="if(event.key==='Enter')lmOwnerLogin()" />
           <p class="lm-hint" id="lmOwnerErr" style="color:#D95C5C;display:none"></p>
-          <button class="lm-confirm-btn" onclick="ownerLogin()" style="margin-top:10px">
+          <button class="lm-confirm-btn" onclick="lmOwnerLogin()" style="margin-top:10px">
             사장님 로그인
           </button>
         </div>
@@ -320,7 +320,7 @@
     updateBtnLabel();
   };
 
-  window.ownerLogin = function () {
+  window.lmOwnerLogin = function () {
     const id  = (document.getElementById('lmOwnerId').value  || '').trim();
     const pw  = (document.getElementById('lmOwnerPw').value  || '').trim();
     const err = document.getElementById('lmOwnerErr');
