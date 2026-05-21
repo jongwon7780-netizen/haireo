@@ -65,6 +65,8 @@ const SB = (function () {
                               ? data.businessHours.start : 10,
       business_hours_end:   (data.businessHours && data.businessHours.end)   !== undefined
                               ? data.businessHours.end   : 21,
+      lat:                  data.lat != null ? data.lat : null,
+      lng:                  data.lng != null ? data.lng : null,
     };
   }
 
@@ -81,6 +83,8 @@ const SB = (function () {
       designers:     (row.designers || []).map(function (d) {
         return { name: d.name, loginId: d.login_id, password: d.password };
       }),
+      lat:           row.lat  || null,
+      lng:           row.lng  || null,
       createdAt:     row.created_at,
       updatedAt:     row.updated_at,
     };

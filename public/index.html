@@ -165,6 +165,14 @@
       transform: scale(1.07) translateY(-1px);
       box-shadow: 0 4px 14px rgba(196,114,90,0.55);
     }
+    .map-pin.partner-pin {
+      background: #2D2D2D; color: #FFD966;
+      box-shadow: 0 2px 10px rgba(45,45,45,0.45);
+      z-index: 5;
+    }
+    .map-pin.partner-pin:hover {
+      box-shadow: 0 4px 14px rgba(45,45,45,0.6);
+    }
 
     /* ══ GPS / RE-SEARCH ══ */
     .gps-btn {
@@ -400,10 +408,11 @@
 
   /* ── 상태 ── */
   var map, infoOv;
-  var pinOvs       = [];
-  var myDotOv      = null;
-  var mapMoveTimer = null;
-  var _pinData     = [];
+  var pinOvs          = [];
+  var _partnerPinOvs  = [];
+  var myDotOv         = null;
+  var mapMoveTimer    = null;
+  var _pinData        = [];
 
   var RATINGS      = [4.8, 4.6, 4.9, 4.5, 4.7, 4.4, 4.8, 4.3, 4.6, 4.5];
   var AVAILS       = ['available','available','soon','available','full',
@@ -794,8 +803,29 @@
         var slots = await SB.getSlots(s.id, _todayStr).catch(function(){ return {}; });
         return Object.assign({}, s, { _avail: calcPartnerAvail(slots, s.businessHours) });
       }));
+      renderPartnerPins(_partnerSalons);
       if (_pinData.length) renderCards(_pinData);
     } catch(e) { _partnerSalons = []; }
+  }
+
+  function renderPartnerPins(salons) {
+    _partnerPinOvs.forEach(function(o) { o.setMap(null); });
+    _partnerPinOvs = [];
+    salons.forEach(function(s) {
+      if (!s.lat || !s.lng) return;
+      var pos = new kakao.maps.LatLng(s.lat, s.lng);
+      var el  = document.createElement('div');
+      el.className   = 'map-pin partner-pin';
+      el.textContent = '⭐ ' + s.name;
+      var ov = new kakao.maps.CustomOverlay({ position: pos, content: el, yAnchor: 1, zIndex: 5 });
+      ov.setMap(map);
+      _partnerPinOvs.push(ov);
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showPartnerSalon(s);
+        map.panTo(pos);
+      });
+    });
   }
 
   function calcPartnerAvail(slots, hours) {

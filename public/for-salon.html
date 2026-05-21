@@ -587,8 +587,8 @@
       <p class="auth-title">사장님 로그인</p>
       <p class="auth-sub">가입 시 등록한 전화번호와 비밀번호를 입력하세요</p>
       <div class="auth-field">
-        <label>전화번호</label>
-        <input type="tel" id="liPhone" placeholder="010-1234-5678" autocomplete="username" />
+        <label>전화번호 또는 이메일</label>
+        <input type="text" id="liPhone" placeholder="010-1234-5678 또는 이메일" autocomplete="username" />
       </div>
       <div class="auth-field">
         <label>비밀번호</label>
@@ -597,6 +597,12 @@
       </div>
       <p class="auth-err" id="liErr"></p>
       <button id="liLoginBtn" class="auth-btn" onclick="doLogin()">로그인</button>
+      <button type="button" onclick="testLogin()"
+        style="width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1.5px dashed var(--border);
+               background:#FFF8F5;color:var(--rose);font-size:13px;font-weight:700;cursor:pointer;
+               font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.2px">
+        🧪 테스트 계정으로 바로 로그인
+      </button>
       <div class="auth-footer">
         아직 계정이 없으신가요? <button onclick="showSignupView()">무료 가입</button>
       </div>
@@ -777,14 +783,24 @@ function dbTab(n) {
 }
 
 /* ── 통계 ── */
+const TEST_SALON_NAME = '헤어이어 테스트샵';
+const TEST_STATS      = { today: 47, week: 213, naver: 12 };
+
 async function renderStats() {
   if (!ownerAuth) return;
   try {
     const d = await fetch('/api/stats?salon_name=' + encodeURIComponent(ownerAuth.salonName)).then(r => r.json());
-    document.getElementById('statToday').textContent = d.today ?? 0;
-    document.getElementById('statWeek').textContent  = d.week  ?? 0;
-    document.getElementById('statNaver').textContent = d.naver ?? 0;
-  } catch(e) {}
+    const isTest = ownerAuth.salonName === TEST_SALON_NAME;
+    document.getElementById('statToday').textContent = (isTest && !d.today) ? TEST_STATS.today : (d.today ?? 0);
+    document.getElementById('statWeek').textContent  = (isTest && !d.week)  ? TEST_STATS.week  : (d.week  ?? 0);
+    document.getElementById('statNaver').textContent = (isTest && !d.naver) ? TEST_STATS.naver : (d.naver ?? 0);
+  } catch(e) {
+    if (ownerAuth.salonName === TEST_SALON_NAME) {
+      document.getElementById('statToday').textContent = TEST_STATS.today;
+      document.getElementById('statWeek').textContent  = TEST_STATS.week;
+      document.getElementById('statNaver').textContent = TEST_STATS.naver;
+    }
+  }
 }
 
 /* ── 탭0: 빈자리 관리 ── */
@@ -1022,6 +1038,13 @@ async function doLogin() {
   } finally {
     setBtnLoading('liLoginBtn', false, '로그인');
   }
+}
+
+/* ── 테스트 계정 로그인 ── */
+function testLogin() {
+  document.getElementById('liPhone').value = 'test@haireo.com';
+  document.getElementById('liPw').value    = 'haireo1234';
+  doLogin();
 }
 
 /* ── 로그아웃 ── */
