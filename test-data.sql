@@ -9,10 +9,10 @@ ALTER TABLE salons ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
 
 -- ──────────────────────────────────────────────────────────
 -- 2. 테스트 사장님 계정
---    로그인: test@haireo.com / haireo1234
+--    로그인: admin / 1234
 -- ──────────────────────────────────────────────────────────
 INSERT INTO owners (name, phone, password)
-VALUES ('테스트 원장', 'test@haireo.com', 'haireo1234')
+VALUES ('테스트 원장', 'admin', '1234')
 ON CONFLICT (phone) DO NOTHING;
 
 -- ──────────────────────────────────────────────────────────
