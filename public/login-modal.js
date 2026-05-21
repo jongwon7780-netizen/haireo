@@ -196,6 +196,20 @@
         <p class="lm-terms">
           로그인 시 <a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의하게 됩니다.
         </p>
+
+        <div class="lm-divider" style="margin-top:20px">사장님이신가요?</div>
+        <div class="lm-input-wrap">
+          <input class="lm-input" type="text" id="lmOwnerId" placeholder="아이디"
+            style="width:100%;margin-bottom:8px;box-sizing:border-box"
+            onkeydown="if(event.key==='Enter')ownerLogin()" />
+          <input class="lm-input" type="password" id="lmOwnerPw" placeholder="비밀번호"
+            style="width:100%;box-sizing:border-box"
+            onkeydown="if(event.key==='Enter')ownerLogin()" />
+          <p class="lm-hint" id="lmOwnerErr" style="color:#D95C5C;display:none"></p>
+          <button class="lm-confirm-btn" onclick="ownerLogin()" style="margin-top:10px">
+            사장님 로그인
+          </button>
+        </div>
       </div>
 
       <div id="lmLoggedView" style="display:none;text-align:center;padding:16px 0;">
@@ -304,6 +318,22 @@
     localStorage.setItem('haireo_user', JSON.stringify(user));
     window.closeLoginModal();
     updateBtnLabel();
+  };
+
+  window.ownerLogin = function () {
+    const id  = (document.getElementById('lmOwnerId').value  || '').trim();
+    const pw  = (document.getElementById('lmOwnerPw').value  || '').trim();
+    const err = document.getElementById('lmOwnerErr');
+    err.style.display = 'none';
+    if (!id || !pw) { err.textContent = '아이디와 비밀번호를 입력해주세요.'; err.style.display = 'block'; return; }
+    if ((id === 'admin' || id === 'test') && pw === '1234') {
+      localStorage.setItem('ownerLoggedIn', 'true');
+      localStorage.setItem('ownerName', '테스트샵 사장님');
+      window.location.href = '/for-salon.html';
+    } else {
+      err.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+      err.style.display = 'block';
+    }
   };
 
   window.logout = function () {
