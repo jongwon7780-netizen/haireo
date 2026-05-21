@@ -273,15 +273,22 @@
     document.getElementById('omErr').classList.remove('show');
   };
   window.ownerLogin = function () {
-    const id = (document.getElementById('omId').value || '').trim();
-    const pw = document.getElementById('omPw').value || '';
-    if (id === 'admin' && pw === 'haireo1234') {
-      ownerAuth = { id };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(ownerAuth));
-      closeOwnerModal();
-      showOwnerBar();
+    /* login-modal.js 입력칸과 owner-bar 입력칸 둘 다 지원 */
+    const idEl = document.getElementById('lmOwnerId') || document.getElementById('omId');
+    const pwEl = document.getElementById('lmOwnerPw') || document.getElementById('omPw');
+    const id = ((idEl && idEl.value) || '').trim();
+    const pw = ((pwEl && pwEl.value) || '').trim();
+
+    if ((id === 'admin' || id === 'test') && pw === '1234') {
+      localStorage.setItem('ownerLoggedIn', 'true');
+      localStorage.setItem('ownerName', '테스트샵 사장님');
+      window.location.href = '/for-salon.html';
     } else {
-      document.getElementById('omErr').classList.add('show');
+      /* 오류 표시 — 어느 모달이 열려있든 처리 */
+      const lmErr = document.getElementById('lmOwnerErr');
+      const omErr = document.getElementById('omErr');
+      if (lmErr) { lmErr.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.'; lmErr.style.display = 'block'; }
+      if (omErr) { omErr.classList.add('show'); }
     }
   };
   window.ownerLogout = function () {
