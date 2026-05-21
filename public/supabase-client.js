@@ -55,7 +55,7 @@ const SB = (function () {
 
   /* ─ 행 변환 헬퍼 ──────────────────────────────────────────── */
   function toSalonRow(data) {
-    return {
+    const row = {
       owner_id:             data.ownerId  || null,
       name:                 data.name,
       address:              data.address,
@@ -65,9 +65,10 @@ const SB = (function () {
                               ? data.businessHours.start : 10,
       business_hours_end:   (data.businessHours && data.businessHours.end)   !== undefined
                               ? data.businessHours.end   : 21,
-      lat:                  data.lat != null ? data.lat : null,
-      lng:                  data.lng != null ? data.lng : null,
     };
+    if (data.lat != null) row.lat = data.lat;
+    if (data.lng != null) row.lng = data.lng;
+    return row;
   }
 
   function mapSalon(row) {

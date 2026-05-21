@@ -585,10 +585,10 @@
     <p class="auth-page-label">사장님 전용 로그인</p>
     <div class="auth-card" style="max-width:400px">
       <p class="auth-title">사장님 로그인</p>
-      <p class="auth-sub">가입 시 등록한 전화번호와 비밀번호를 입력하세요</p>
+      <p class="auth-sub">전화번호 또는 아이디, 비밀번호를 입력하세요</p>
       <div class="auth-field">
         <label>전화번호 또는 이메일</label>
-        <input type="text" id="liPhone" placeholder="010-1234-5678 또는 이메일" autocomplete="username" />
+        <input type="text" id="liPhone" placeholder="전화번호 또는 아이디 (예: admin)" autocomplete="username" />
       </div>
       <div class="auth-field">
         <label>비밀번호</label>
@@ -1024,7 +1024,7 @@ async function doLogin() {
   const pw    = document.getElementById('liPw').value;
   const errEl = document.getElementById('liErr');
   errEl.classList.remove('show');
-  if (!phone || !pw) { errEl.textContent = '전화번호와 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
+  if (!phone || !pw) { errEl.textContent = '아이디와 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
 
   setBtnLoading('liLoginBtn', true, '로그인');
   try {
